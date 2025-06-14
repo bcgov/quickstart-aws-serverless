@@ -1,0 +1,107 @@
+name: Merge
+
+concurrency:
+  group: main
+  cancel-in-progress: false
+# This concurrency group ensures that only one workflow runs at a time for the main branch.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+      inputs:
+        pr_no:
+            description: "PR-numbered container set to deploy"
+            type: number
+            required: true
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: write # This is required for actions/checkout
+  packages: write
+env:
+    AWS_REGION: ca-central-1
+jobs:
+  vars:
+    name: Set Variables
+    outputs:
+      pr: ${{ steps.pr.outputs.pr || github.event.inputs.pr_no }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      # Get PR number for squash merges to main
+      - name: PR Number
+        if: ${{ github.event_name != 'workflow_dispatch' }} 
+        id: pr
+        uses: bcgov-nr/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d # v0.0.1
+  resume-resources:
+    name: Resume Resources # This job resumes resources for the merged PR which is needed if the resources were paused.
+    needs: [vars]
+    uses: ./.github/workflows/resume-resources.yml
+    with:
+      app_env: all
+    secrets: inherit
+  deploy_stack_dev:
+    name: Deploy Stack Dev
+    needs: [resume-resources, vars]
+    uses: ./.github/workflows/.deploy_stack.yml
+    with:
+      environment_name: dev
+      command: apply
+      tag: ${{ needs.vars.outputs.pr }}
+      app_env: dev
+    secrets: inherit
+  retag-images-dev:
+    name: Retag Images Dev
+    needs: [deploy_stack_dev, vars]
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        package: [backend, migrations, frontend]
+    steps:
+      - name: retag
+        uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target:  ${{ needs.vars.outputs.pr }}
+          tags: |
+            dev
+
+  e2e:
+    name: E2E Tests
+    needs: [deploy_stack_dev]
+    uses: ./.github/workflows/.e2e.yml
+    with:
+      frontend_url: https://${{ needs.deploy_stack_dev.outputs.CF_DOMAIN }}
+  deploy_stack_test:
+    name: Deploy Stack Test
+    needs: [vars, e2e]
+    uses: ./.github/workflows/.deploy_stack.yml
+    with:
+      environment_name: dev # since we are using the same namespace env for dev and test
+      command: apply
+      tag: ${{ needs.vars.outputs.pr }}
+      app_env: test
+    secrets: inherit
+  retag-images-test:
+    name: Retag Images Test
+    needs: [deploy_stack_test, vars]
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        package: [backend, migrations, frontend]
+    steps:
+      - name: retag
+        uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target:  ${{ needs.vars.outputs.pr }}
+          tags: |
+            test
+  pause-resources:
+    name: Pause Resources # This job pauses resources for the merged PR which is needed if the resources were not paused, this is to save money, remove it after cloning.
+    needs: [deploy_stack_test]
+    uses: ./.github/workflows/pause-resources.yml
+    with:
+      app_env: all
+    secrets: inherit

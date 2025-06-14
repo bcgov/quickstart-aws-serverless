@@ -1,0 +1,92 @@
+name: Pause AWS Resources
+
+on:
+  schedule:
+    - cron: "0 2 * * 2-6" # Runs every day at 6PM PST, Monday to Friday
+  workflow_dispatch:
+    inputs:
+      app_env:
+        description: 'Stack prefix to use for Pausing resources'
+        required: true
+        type: choice
+        default: dev
+        options:
+          - dev
+          - test
+          - prod
+          - all
+
+  workflow_call:
+    inputs:
+      app_env:
+        description: 'Stack prefix to use for Pausing resources'
+        required: false
+        type: string
+        default: dev
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: write # This is required for actions/checkout
+jobs:
+  stack-prefix:
+    name: Stack Prefix
+    uses: ./.github/workflows/.stack-prefix.yml
+  pause-resources-dev:
+    name: Pause Resources Dev
+    if: (${{inputs.app_env == 'dev' || inputs.app_env == 'all'}} || github.event_name == 'schedule')
+    needs: [stack-prefix]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: gha-pause-resources
+          aws-region: ca-central-1
+      - name: Pause AWS Resources
+        run: |
+          chmod +x ./.github/scripts/pause.sh
+          ./.github/scripts/pause.sh dev ${{ needs.stack-prefix.outputs.stack_prefix }} 
+          
+  pause-resources-test:
+    name: Pause Resources Test
+    if: (${{inputs.app_env == 'test' || inputs.app_env == 'all'}} || github.event_name == 'schedule')
+    environment: test
+    needs: [stack-prefix]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: gha-pause-resources
+          aws-region: ca-central-1
+      - name: Pause AWS Resources
+        shell: bash
+        run: |
+          chmod +x ./.github/scripts/pause.sh
+          ./.github/scripts/pause.sh test ${{ needs.stack-prefix.outputs.stack_prefix }}
+  pause-resources-prod:
+    name: Pause Resources PROD
+    if: (${{inputs.app_env == 'prod' || inputs.app_env == 'all'}} || github.event_name == 'schedule')
+    environment: prod
+    needs: [stack-prefix]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: gha-pause-resources
+          aws-region: ca-central-1
+      - name: Pause AWS Resources
+        shell: bash
+        run: |
+          chmod +x ./.github/scripts/pause.sh
+          ./.github/scripts/pause.sh prod ${{ needs.stack-prefix.outputs.stack_prefix }}
