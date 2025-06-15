@@ -82,7 +82,14 @@ variable "aws_region" {
   type = string
   default = "ca-central-1"
 }
-
+variable "min_capacity" {
+  type = number
+  default = 1
+}
+variable "max_capacity" {
+  type = number
+  default = 5
+}
 
 variable "is_public_api" {
   description = "Flag to indicate if the API is public or private"
