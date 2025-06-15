@@ -11,7 +11,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 @Injectable()
-export class DynamoDBService{
+export class DynamoDBService {
   private readonly logger = new Logger(DynamoDBService.name);
   private dynamoClient: DynamoDBDocumentClient;
   private tableName: string;
@@ -27,11 +27,12 @@ export class DynamoDBService{
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "dummy",
     };
 
-    const client = new DynamoDBClient(clientConfig);
+    const client = new DynamoDBClient(
+      process.env.IS_OFFLINE ? clientConfig : {},
+    );
     this.dynamoClient = DynamoDBDocumentClient.from(client);
     this.tableName = process.env.DYNAMODB_TABLE_NAME || "users";
   }
-
 
   getClient(): DynamoDBDocumentClient {
     return this.dynamoClient;
