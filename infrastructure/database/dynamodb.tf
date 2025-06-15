@@ -51,9 +51,3 @@ output "dynamodb_table_arn" {
   description = "ARN of the DynamoDB table"
   value       = aws_dynamodb_table.users_table.arn
 }
-
-output "dynamodb_endpoint" {
-  description = "DynamoDB endpoint URL"
-  value       = aws_dynamodb_table.users_table.end
-  
-}
