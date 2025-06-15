@@ -29,29 +29,7 @@ function validate_args() {
     fi
 }
 
-# Check if Aurora DB cluster exists and get its status
-function check_aurora_cluster() {
-    local cluster_id="${STACK_PREFIX}-aurora-${ENVIRONMENT}"
-    local status=$(aws rds describe-db-clusters --db-cluster-identifier "$cluster_id" \
-                  --query 'DBClusters[0].Status' --output text 2>/dev/null || echo "false")
-    echo "$status"
-}
 
-# Pause Aurora DB cluster if available
-function pause_aurora_cluster() {
-    local cluster_id="${STACK_PREFIX}-aurora-${ENVIRONMENT}"
-    local status=$1
-    
-    if [ "$status" = "false" ]; then
-        echo "Skipping Aurora pause operation: DB cluster does not exist"
-        return
-    elif [ "$status" = "available" ]; then
-        echo "Pausing Aurora cluster: $cluster_id"
-        aws rds stop-db-cluster --db-cluster-identifier "$cluster_id" --no-cli-pager --output json
-    else
-        echo "DB cluster is not in an available state. Current state: $status"
-    fi
-}
 
 # Check if ECS cluster exists
 function check_ecs_cluster() {

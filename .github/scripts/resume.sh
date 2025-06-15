@@ -26,34 +26,14 @@ check_parameters() {
         exit 1
     fi
 }
-
-# Function to check if DB cluster exists and get its status
-check_db_cluster() {
-    local prefix=$1
-    local env=$2
-    local cluster_id="${prefix}-aurora-${env}"
-    local status=$(aws rds describe-db-clusters --db-cluster-identifier ${cluster_id} --query 'DBClusters[0].Status' --output text 2>/dev/null || echo "not-found")
+# Check if ECS cluster exists
+function check_ecs_cluster() {
+    local cluster_name="ecs-cluster-${STACK_PREFIX}-node-api-${ENVIRONMENT}"
+    local status=$(aws ecs describe-clusters --clusters "$cluster_name" \
+                  --query 'clusters[0].status' --output text 2>/dev/null || echo "INACTIVE")
     echo "$status"
 }
 
-# Function to start DB cluster
-start_db_cluster() {
-    local prefix=$1
-    local env=$2
-    local cluster_id="${prefix}-aurora-${env}"
-    
-    echo "Starting DB cluster ${cluster_id}..."
-    aws rds start-db-cluster --db-cluster-identifier ${cluster_id} --no-cli-pager --output json
-    
-    echo "Waiting for DB cluster to be available..."
-    if ! aws rds wait db-cluster-available --db-cluster-identifier ${cluster_id}; then
-        echo "Timeout waiting for DB cluster to become available"
-        return 1
-    fi
-    
-    echo "DB cluster is now available"
-    return 0
-}
 
 # Function to resume ECS service
 resume_ecs_service() {
@@ -61,9 +41,13 @@ resume_ecs_service() {
     local env=$2
     local cluster="ecs-cluster-${prefix}-node-api-${env}"
     local service="${prefix}-node-api-${env}-service"
+    local cluster_status=$3
     
+    if [ "$cluster_status" != "ACTIVE" ]; then
+        echo "Skipping ECS resume operation: Cluster $cluster does not exist"
+        return
+    fi
     echo "Resuming ECS service ${service} on cluster ${cluster}..."
-    
     # Update scaling policy
     aws application-autoscaling register-scalable-target \
         --service-namespace ecs \
@@ -91,12 +75,13 @@ main() {
     local prefix=$2
     
     echo "Starting to resume resources for environment: ${env} with stack prefix: ${prefix}"
-    
+    # Check and pause ECS service
+    ecs_status=$(check_ecs_cluster)
+    [ "$ecs_status" = "INACTIVE" ] || echo "ECS cluster status: $ecs_status"
     # Resume ECS service (DynamoDB is always available)
-    resume_ecs_service "$prefix" "$env"
+    resume_ecs_service "$prefix" "$env" "$ecs_status"
     
     echo "Resources have been resumed successfully"
-    echo "Note: DynamoDB doesn't require resuming as it's always available with pay-per-request billing."
 }
 
 # Parse and check arguments
