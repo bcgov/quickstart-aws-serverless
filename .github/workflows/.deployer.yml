@@ -85,7 +85,6 @@ jobs:
           target_env: ${{ inputs.environment_name }}
           aws_license_plate: ${{ secrets.AWS_LICENSE_PLATE }}
           api_image: ghcr.io/${{github.repository}}/backend:${{inputs.tag}}
-          aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
       run: |
@@ -99,7 +98,6 @@ jobs:
           target_env: ${{ inputs.environment_name }}
           aws_license_plate: ${{ secrets.AWS_LICENSE_PLATE }}
           api_image: ghcr.io/${{github.repository}}/backend:${{inputs.tag}}
-          aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
       run: |

@@ -105,11 +105,3 @@ variable "dynamodb_table_name" {
     error_message = "The DynamoDB table name must not be empty."
   }
 }
-variable "account_id" {
-  description = "The AWS account ID"
-  type        = string
-  validation {
-    condition     = length(var.account_id) == 12 && can(regex("^[0-9]{12}$", var.account_id))
-    error_message = "The AWS account ID must be a 12-digit number."
-  }
-}
