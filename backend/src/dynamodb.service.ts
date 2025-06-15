@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, DynamoDBClientConfig } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
@@ -12,7 +12,6 @@ import {
 
 @Injectable()
 export class DynamoDBService {
-  private readonly logger = new Logger(DynamoDBService.name);
   private dynamoClient: DynamoDBDocumentClient;
   private tableName: string;
   constructor() {
