@@ -134,7 +134,7 @@ java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb -i
 # Create table
 aws dynamodb create-table \
   --endpoint-url http://localhost:8000 \
-  --table-name users-local \
+  --table-name users \
   --attribute-definitions AttributeName=id,AttributeType=S AttributeName=email,AttributeType=S \
   --key-schema AttributeName=id,KeyType=HASH \
   --global-secondary-indexes IndexName=EmailIndex,KeySchema=[{AttributeName=email,KeyType=HASH}],Projection={ProjectionType=ALL} \
@@ -143,14 +143,14 @@ aws dynamodb create-table \
 # Add sample data
 aws dynamodb put-item \
   --endpoint-url http://localhost:8000 \
-  --table-name users-local \
+  --table-name users \
   --item '{"id":{"S":"1"}, "name":{"S":"John"}, "email":{"S":"John.ipsum@test.com"}}'
 ```
 
 3. Run backend from root of folder:
 ```sh
 cd backend
-export DYNAMODB_TABLE_NAME=users-local
+export DYNAMODB_TABLE_NAME=users
 export DYNAMODB_ENDPOINT=http://localhost:8000
 export AWS_REGION=ca-central-1
 export AWS_ACCESS_KEY_ID=dummy
