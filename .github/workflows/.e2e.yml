@@ -26,6 +26,7 @@ jobs:
           BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend:${{ inputs.tag }}
           FLYWAY_IMAGE: ghcr.io/${{ github.repository }}/migrations:${{ inputs.tag }}
           FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend:${{ inputs.tag }}
+          IS_OFFLINE: 'true' # this is for backend to run in offline mode
         run: docker compose up -d --wait
         continue-on-error: true
       - name: Docker Compose Logs
