@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -11,7 +11,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 @Injectable()
-export class DynamoDBService implements OnModuleInit {
+export class DynamoDBService{
   private readonly logger = new Logger(DynamoDBService.name);
   private dynamoClient: DynamoDBDocumentClient;
   private tableName: string;
@@ -32,10 +32,6 @@ export class DynamoDBService implements OnModuleInit {
     this.tableName = process.env.DYNAMODB_TABLE_NAME || "users";
   }
 
-  async onModuleInit() {
-    this.logger.log("DynamoDB service initialized");
-    this.logger.log(`Using table: ${this.tableName}`);
-  }
 
   getClient(): DynamoDBDocumentClient {
     return this.dynamoClient;

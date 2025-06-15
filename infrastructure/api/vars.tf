@@ -12,10 +12,6 @@ variable "stack_prefix" {
   type        = string
 }
 
-variable "aws_license_plate" {
-  description = "The AWS license plate identifier"
-  type        = string
-}
 
 variable "subnet_app_a" {
   description = "Value of the name tag for a subnet in the APP security group"
