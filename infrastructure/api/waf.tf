@@ -67,9 +67,9 @@ resource "aws_cloudfront_distribution" "api" {
         cached_methods   = ["GET", "HEAD"]
         target_origin_id = "http-api-origin"
         viewer_protocol_policy = "https-only"
-        default_ttl = 900 # 15 minutes
+        default_ttl = 60 # 1 minute
         min_ttl     = 0
-        max_ttl     = 900
+        max_ttl     = 60
 
         forwarded_values {
             query_string = true

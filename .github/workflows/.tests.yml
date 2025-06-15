@@ -16,18 +16,6 @@ jobs:
     if: ${{ ! github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    services:
-      postgres:
-        image: postgis/postgis:17-3.5 # Updated to PostgreSQL 17 with PostGIS 3.5
-        env:
-          POSTGRES_PASSWORD: default
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
     steps:
       - uses: bcgov-nr/action-test-and-analyse@v1.3.0
         env:

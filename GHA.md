@@ -198,15 +198,15 @@ The workflows in this repository are organized into three main categories:
 - Manual workflow dispatch with environment selection
 - Workflow call from other workflows
 
-**Purpose**: Cost optimization by pausing resources outside of working hours.
+**Purpose**: Cost optimization by pausing ECS services outside of working hours. Note: DynamoDB doesn't require pausing as it uses pay-per-request billing.
 
 **Inputs**:
 - `app_env`: Environment to pause resources for (dev, test, prod, or all)
 
 **Details**:
-- Identifies resources that can be safely paused in specified environment(s)
+- Identifies ECS services that can be safely paused in specified environment(s)
 - Scales down ECS services to zero
-- Stops RDS clusters
+- Note: DynamoDB tables remain available as they use pay-per-request billing with no idle costs
 - Uses AWS CLI commands to pause specific services
 - Runs on a schedule to automatically pause resources
 - Can be targeted to specific environments (dev, test, prod)
@@ -218,15 +218,15 @@ The workflows in this repository are organized into three main categories:
 - Manual workflow dispatch with environment selection
 - Workflow call from other workflows (like PR deployment)
 
-**Purpose**: Resume paused resources at the start of the working day or on-demand.
+**Purpose**: Resume paused ECS services at the start of the working day or on-demand. Note: DynamoDB is always available.
 
 **Inputs**:
 - `app_env`: Environment to resume resources for (dev, test, prod, or all)
 
 **Details**:
-- Starts RDS clusters in specified environment(s)
 - Scales ECS services back to their configured capacity
 - Ensures all services are in a ready state
+- Note: DynamoDB tables are always available and don't require resuming
 - Can be targeted to specific environments (dev, test, prod)
 
 ### `prune-env.yml`
@@ -257,7 +257,7 @@ The workflows use the following environment configurations:
    - Can be paused/resumed independently from other environments
 3. **Production (prod)**: Used for live production deployments via the release workflow
    - Uses a mix of FARGATE (base=1, 20%) and FARGATE_SPOT (80%) for reliability and cost-effectiveness
-   - Database credentials stored and retrieved securely from AWS Secrets Manager
+   - DynamoDB tables with deletion protection enabled for production environments
    - API Gateway with VPC Link for secure backend access
    - Requires strict environment approval for resource management operations
    - Can be excluded from automatic pause/resume schedules if needed for 24/7 availability

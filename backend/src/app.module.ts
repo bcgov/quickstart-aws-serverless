@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { MiddlewareConsumer, Module, RequestMethod } from "@nestjs/common";
 import { HTTPLoggerMiddleware } from "./middleware/req.res.logger";
-import { PrismaService } from "src/prisma.service";
+import { DynamoDBService } from "src/dynamodb.service";
 import { ConfigModule } from "@nestjs/config";
 import { UsersModule } from "./users/users.module";
 import { AppService } from "./app.service";
@@ -19,7 +19,7 @@ import { HealthController } from "./health.controller";
     UsersModule
   ],
   controllers: [AppController,MetricsController, HealthController],
-  providers: [AppService, PrismaService]
+  providers: [AppService, DynamoDBService]
 })
 export class AppModule { // let's add a middleware on all routes
   configure(consumer: MiddlewareConsumer) {

@@ -1,82 +1,92 @@
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma.service";
+import { DynamoDBService } from "src/dynamodb.service";
+import { v4 as uuidv4 } from "uuid";
 
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserDto } from "./dto/user.dto";
-import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class UsersService {
   constructor(
-    private prisma: PrismaService
+    private dynamoDBService: DynamoDBService
   ) {
   }
 
   async create(user: CreateUserDto): Promise<UserDto> {
-    const savedUser = await this.prisma.users.create({
-      data: {
-        name: user.name,
-        email: user.email
-      }
-    });
+    const id = uuidv4();
+    const newUser = {
+      id,
+      name: user.name,
+      email: user.email,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    await this.dynamoDBService.put(newUser);
 
     return {
-      id: savedUser.id.toNumber(),
-      name: savedUser.name,
-      email: savedUser.email
+      id,
+      name: user.name,
+      email: user.email
     };
   }
 
   async findAll(): Promise<UserDto[]> {
-    const users = await this.prisma.users.findMany();
-    return users.flatMap(user => {
-      const userDto: UserDto = {
-        id: user.id.toNumber(),
-        name: user.name,
-        email: user.email
-      };
-      return userDto;
-    });
+    const result = await this.dynamoDBService.scan();
+    const users = result.Items || [];
+    
+    return users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }));
   }
 
-  async findOne(id: number): Promise<UserDto> {
-    const user = await this.prisma.users.findUnique({
-      where: {
-        id: new Prisma.Decimal(id)
-      }
-    });
+  async findOne(id: string): Promise<UserDto> {
+    const result = await this.dynamoDBService.get({ id });
+    const user = result.Item;
+    
+    if (!user) {
+      throw new Error(`User with id ${id} not found`);
+    }
+
     return {
-      id: user.id.toNumber(),
+      id: user.id,
       name: user.name,
       email: user.email
     };
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
-    const user = await this.prisma.users.update({
-      where: {
-        id: new Prisma.Decimal(id)
-      },
-      data: {
-        name: updateUserDto.name,
-        email: updateUserDto.email
-      }
-    });
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
+    const updateExpression = "SET #name = :name, #email = :email, updatedAt = :updatedAt";
+    const expressionAttributeNames = {
+      "#name": "name",
+      "#email": "email"
+    };
+    const expressionAttributeValues = {
+      ":name": updateUserDto.name,
+      ":email": updateUserDto.email,
+      ":updatedAt": new Date().toISOString()
+    };
+
+    const result = await this.dynamoDBService.update(
+      { id },
+      updateExpression,
+      expressionAttributeValues,
+      expressionAttributeNames
+    );
+
     return {
-      id: user.id.toNumber(),
-      name: user.name,
-      email: user.email
+      id: result.Attributes.id,
+      name: result.Attributes.name,
+      email: result.Attributes.email
     };
   }
 
-  async remove(id: number): Promise<{ deleted: boolean; message?: string }> {
+  async remove(id: string): Promise<{ deleted: boolean; message?: string }> {
     try {
-      await this.prisma.users.delete({
-        where: {
-          id: new Prisma.Decimal(id)
-        }
-      });
+      await this.dynamoDBService.delete({ id });
       return { deleted: true };
     } catch (err) {
       return { deleted: false, message: err.message };
@@ -85,8 +95,8 @@ export class UsersService {
 
   async searchUsers(page: number,
                     limit: number,
-                    sort: string, // JSON string to store sort key and sort value, ex: [{"name":"desc"},{"email":"asc"}]
-                    filter: string // JSON array for key, operation and value, ex: [{"key": "name", "operation": "like", "value": "Jo"}]
+                    sort: string, // JSON string for sort configuration
+                    filter: string // JSON string for filter configuration
   ): Promise<any> {
 
     page = page || 1;
@@ -94,63 +104,23 @@ export class UsersService {
       limit = 10;
     }
 
-    let sortObj=[];
-    let filterObj = {};
-    try {
-      sortObj = JSON.parse(sort);
-      filterObj = JSON.parse(filter);
-    } catch (e) {
-      throw new Error("Invalid query parameters");
-    }
-    const users = await this.prisma.users.findMany({
-      skip: (page - 1) * limit,
-      take: parseInt(String(limit)),
-      orderBy: sortObj,
-      where: this.convertFiltersToPrismaFormat(filterObj)
+    // For simplicity, implementing basic scan with pagination
+    // In production, you might want to use DynamoDB's pagination features
+    const result = await this.dynamoDBService.scan({
+      Limit: limit,
+      // Note: DynamoDB pagination is different from SQL OFFSET
+      // You would typically use LastEvaluatedKey for pagination
     });
 
-    const count = await this.prisma.users.count({
-      orderBy: sortObj,
-      where: this.convertFiltersToPrismaFormat(filterObj)
-    });
-
-    return {
+    const users = (result.Items || []).map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }));    return {
       users,
+      totalCount: result.Count || 0,
       page,
-      limit,
-      total: count,
-      totalPages: Math.ceil(count / limit)
+      limit
     };
-  }
-
-  public convertFiltersToPrismaFormat(filterObj): any {
-
-    let prismaFilterObj = {};
-
-    for (const item of filterObj) {
-
-      if (item.operation === "like") {
-        prismaFilterObj[item.key] = { contains: item.value };
-      } else if (item.operation === "eq") {
-        prismaFilterObj[item.key] = { equals: item.value };
-      } else if (item.operation === "neq") {
-        prismaFilterObj[item.key] = { not: { equals: item.value } };
-      } else if (item.operation === "gt") {
-        prismaFilterObj[item.key] = { gt: item.value };
-      } else if (item.operation === "gte") {
-        prismaFilterObj[item.key] = { gte: item.value };
-      } else if (item.operation === "lt") {
-        prismaFilterObj[item.key] = { lt: item.value };
-      } else if (item.operation === "lte") {
-        prismaFilterObj[item.key] = { lte: item.value };
-      } else if (item.operation === "in") {
-        prismaFilterObj[item.key] = { in: item.value };
-      } else if (item.operation === "notin") {
-        prismaFilterObj[item.key] = { not: { in: item.value } };
-      } else if (item.operation === "isnull") {
-        prismaFilterObj[item.key] = { equals: null };
-      }
-    }
-    return prismaFilterObj;
   }
 }

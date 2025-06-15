@@ -1,5 +1,6 @@
 #!/bin/bash
-# This script pauses AWS resources (ECS service and RDS Aurora cluster) in the current AWS account.
+# This script pauses AWS resources (ECS service) in the current AWS account.
+# Note: DynamoDB doesn't require pausing like RDS as it's pay-per-request
 
 set -e  # Exit on error
 
@@ -28,29 +29,7 @@ function validate_args() {
     fi
 }
 
-# Check if Aurora DB cluster exists and get its status
-function check_aurora_cluster() {
-    local cluster_id="${STACK_PREFIX}-aurora-${ENVIRONMENT}"
-    local status=$(aws rds describe-db-clusters --db-cluster-identifier "$cluster_id" \
-                  --query 'DBClusters[0].Status' --output text 2>/dev/null || echo "false")
-    echo "$status"
-}
 
-# Pause Aurora DB cluster if available
-function pause_aurora_cluster() {
-    local cluster_id="${STACK_PREFIX}-aurora-${ENVIRONMENT}"
-    local status=$1
-    
-    if [ "$status" = "false" ]; then
-        echo "Skipping Aurora pause operation: DB cluster does not exist"
-        return
-    elif [ "$status" = "available" ]; then
-        echo "Pausing Aurora cluster: $cluster_id"
-        aws rds stop-db-cluster --db-cluster-identifier "$cluster_id" --no-cli-pager --output json
-    else
-        echo "DB cluster is not in an available state. Current state: $status"
-    fi
-}
 
 # Check if ECS cluster exists
 function check_ecs_cluster() {
@@ -92,16 +71,13 @@ function pause_ecs_service() {
 # Main execution
 validate_args
 
-# Check and pause Aurora cluster
-aurora_status=$(check_aurora_cluster)
-[ "$aurora_status" = "false" ] || echo "Aurora cluster status: $aurora_status"
-
 # Check and pause ECS service
 ecs_status=$(check_ecs_cluster)
 [ "$ecs_status" = "INACTIVE" ] || echo "ECS cluster status: $ecs_status"
 
 # Perform pause operations
 pause_ecs_service "$ecs_status"
-pause_aurora_cluster "$aurora_status"
+
+echo "Pause completed. Note: DynamoDB doesn't require pausing as it uses pay-per-request billing."
 
 echo "Pause operations completed"

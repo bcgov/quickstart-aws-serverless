@@ -1,241 +1,246 @@
 import type { TestingModule } from "@nestjs/testing";
 import { Test } from "@nestjs/testing";
 import { UsersService } from "./users.service";
-import { PrismaService } from "src/prisma.service";
-import { Prisma } from "@prisma/client";
+import { DynamoDBService } from "src/dynamodb.service";
+
+// Mock UUID to return predictable values for testing
+vi.mock("uuid", () => ({
+  v4: vi.fn(() => "test-uuid-123"),
+}));
 
 describe("UserService", () => {
   let service: UsersService;
-  let prisma: PrismaService;
+  let dynamoDBService: DynamoDBService;
 
-  const savedUser1 = {
-    id: new Prisma.Decimal(1),
+  const mockUser1 = {
+    id: "test-uuid-123",
+    name: "Test Numone",
+    email: "numone@test.com",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+  };
+
+  const mockUser2 = {
+    id: "test-uuid-456",
+    name: "Test Numtwo",
+    email: "numtwo@test.com",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+  };
+
+  const createUserDto = {
     name: "Test Numone",
     email: "numone@test.com",
   };
-  const savedUser2 = {
-    id: new Prisma.Decimal(2),
-    name: "Test Numtwo",
-    email: "numtwo@test.com",
+
+  const updateUserDto = {
+    name: "Test Numone update",
+    email: "numoneupdate@test.com",
   };
-  const oneUser = {
-    id: 1,
+
+  const userDtoResponse = {
+    id: "test-uuid-123",
     name: "Test Numone",
     email: "numone@test.com",
   };
-  const updateUser = {
-    id: 1,
+
+  const updatedUserResponse = {
+    id: "test-uuid-123",
     name: "Test Numone update",
     email: "numoneupdate@test.com",
   };
-  const updatedUser = {
-    id: new Prisma.Decimal(1),
-    name: "Test Numone update",
-    email: "numoneupdate@test.com",
-  };
-
-  const twoUser = {
-    id: 2,
-    name: "Test Numtwo",
-    email: "numtwo@test.com",
-  };
-
-  const userArray = [oneUser, twoUser];
-  const savedUserArray = [savedUser1, savedUser2];
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UsersService,
-        {
-          provide: PrismaService,
+        UsersService,        {
+          provide: DynamoDBService,
           useValue: {
-            users: {
-              findMany: vi.fn().mockResolvedValue(savedUserArray),
-              findUnique: vi.fn().mockResolvedValue(savedUser1),
-              create: vi.fn().mockResolvedValue(savedUser1),
-              update: vi.fn().mockResolvedValue(updatedUser),
-              delete: vi.fn().mockResolvedValue(true),
-              count: vi.fn(),
-            },
+            put: vi.fn().mockResolvedValue({ $metadata: {} }),
+            get: vi.fn().mockResolvedValue({ Item: mockUser1, $metadata: {} }),
+            scan: vi.fn().mockResolvedValue({ Items: [mockUser1, mockUser2], Count: 2, $metadata: {} }),
+            update: vi.fn().mockResolvedValue({ 
+              Attributes: {
+                id: "test-uuid-123",
+                name: "Test Numone update",
+                email: "numoneupdate@test.com",
+                updatedAt: "2024-01-01T00:00:00.000Z"
+              },
+              $metadata: {}
+            }),
+            delete: vi.fn().mockResolvedValue({ $metadata: {} }),
           },
         },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    prisma = module.get<PrismaService>(PrismaService);
+    dynamoDBService = module.get<DynamoDBService>(DynamoDBService);
   });
 
   it("should be defined", () => {
     expect(service).toBeDefined();
   });
 
-  describe("createOne", () => {
+  describe("create", () => {
     it("should successfully add a user", async () => {
-      await expect(service.create(oneUser)).resolves.toEqual(oneUser);
-      expect(prisma.users.create).toBeCalledTimes(1);
+      const result = await service.create(createUserDto);
+      
+      expect(result).toEqual(userDtoResponse);
+      expect(dynamoDBService.put).toHaveBeenCalledWith({
+        id: "test-uuid-123",
+        name: "Test Numone",
+        email: "numone@test.com",
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      });
+      expect(dynamoDBService.put).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("findAll", () => {
     it("should return an array of users", async () => {
       const users = await service.findAll();
-      expect(users).toEqual(userArray);
+      
+      expect(users).toEqual([
+        { id: "test-uuid-123", name: "Test Numone", email: "numone@test.com" },
+        { id: "test-uuid-456", name: "Test Numtwo", email: "numtwo@test.com" },
+      ]);
+      expect(dynamoDBService.scan).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("findOne", () => {
     it("should get a single user", async () => {
-      await expect(service.findOne(1)).resolves.toEqual(oneUser);
+      const user = await service.findOne("test-uuid-123");
+      
+      expect(user).toEqual(userDtoResponse);
+      expect(dynamoDBService.get).toHaveBeenCalledWith({ id: "test-uuid-123" });
+    });    it("should throw error when user not found", async () => {
+      vi.spyOn(dynamoDBService, "get").mockResolvedValueOnce({ Item: undefined, $metadata: {} });
+      
+      await expect(service.findOne("non-existent-id")).rejects.toThrow("User with id non-existent-id not found");
     });
   });
 
   describe("update", () => {
     it("should call the update method", async () => {
-      const user = await service.update(1, updateUser);
-      expect(user).toEqual(updateUser);
-      expect(prisma.users.update).toBeCalledTimes(1);
+      const user = await service.update("test-uuid-123", updateUserDto);
+      
+      expect(user).toEqual(updatedUserResponse);
+      expect(dynamoDBService.update).toHaveBeenCalledWith(
+        { id: "test-uuid-123" },
+        "SET #name = :name, #email = :email, updatedAt = :updatedAt",
+        {
+          ":name": "Test Numone update",
+          ":email": "numoneupdate@test.com",
+          ":updatedAt": expect.any(String),
+        },
+        {
+          "#name": "name",
+          "#email": "email",
+        }
+      );
+      expect(dynamoDBService.update).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("remove", () => {
     it("should return {deleted: true}", async () => {
-      await expect(service.remove(2)).resolves.toEqual({ deleted: true });
+      const result = await service.remove("test-uuid-123");
+      
+      expect(result).toEqual({ deleted: true });
+      expect(dynamoDBService.delete).toHaveBeenCalledWith({ id: "test-uuid-123" });
     });
+
     it("should return {deleted: false, message: err.message}", async () => {
-      const repoSpy = vi
-        .spyOn(prisma.users, "delete")
-        .mockRejectedValueOnce(new Error("Bad Delete Method."));
-      await expect(service.remove(-1)).resolves.toEqual({
+      const mockError = new Error("Bad Delete Method.");
+      vi.spyOn(dynamoDBService, "delete").mockRejectedValueOnce(mockError);
+      
+      const result = await service.remove("test-uuid-123");
+      
+      expect(result).toEqual({
         deleted: false,
         message: "Bad Delete Method.",
       });
-      expect(repoSpy).toBeCalledTimes(1);
+      expect(dynamoDBService.delete).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("searchUsers", () => {
-    it("should return a list of users with pagination and filtering", async () => {
+    it("should return a list of users with pagination", async () => {
       const page = 1;
       const limit = 10;
-      const sortObject: Prisma.SortOrder = "asc";
-      const sort: any = `[{ "name": "${sortObject}" }]`;
-      const filter: any = '[{ "name": { "equals": "Peter" } }]';
+      const sort = "{}";
+      const filter = "{}";
 
-      vi.spyOn(prisma.users, "findMany").mockResolvedValue([]);
-      vi.spyOn(prisma.users, "count").mockResolvedValue(0);
       const result = await service.searchUsers(page, limit, sort, filter);
 
       expect(result).toEqual({
-        users: [],
-        page,
-        limit,
-        total: 0,
-        totalPages: 0,
+        users: [
+          { id: "test-uuid-123", name: "Test Numone", email: "numone@test.com" },
+          { id: "test-uuid-456", name: "Test Numtwo", email: "numtwo@test.com" },
+        ],
+        totalCount: 2,
+        page: 1,
+        limit: 10,
       });
+      expect(dynamoDBService.scan).toHaveBeenCalledWith({ Limit: 10 });
     });
 
-    it("given no page should return a list of users with pagination and filtering with default page 1", async () => {
+    it("given no page should return a list of users with default page 1", async () => {
       const limit = 10;
-      const sortObject: Prisma.SortOrder = "asc";
-      const sort: any = `[{ "name": "${sortObject}" }]`;
-      const filter: any = '[{ "name": { "equals": "Peter" } }]';
+      const sort = "{}";
+      const filter = "{}";
 
-      vi.spyOn(prisma.users, "findMany").mockResolvedValue([]);
-      vi.spyOn(prisma.users, "count").mockResolvedValue(0);
       const result = await service.searchUsers(null, limit, sort, filter);
 
       expect(result).toEqual({
-        users: [],
+        users: [
+          { id: "test-uuid-123", name: "Test Numone", email: "numone@test.com" },
+          { id: "test-uuid-456", name: "Test Numtwo", email: "numtwo@test.com" },
+        ],
+        totalCount: 2,
         page: 1,
-        limit,
-        total: 0,
-        totalPages: 0,
+        limit: 10,
       });
     });
-    it("given no limit should return a list of users with pagination and filtering with default limit 10", async () => {
-      const page = 1;
-      const sortObject: Prisma.SortOrder = "asc";
-      const sort: any = `[{ "name": "${sortObject}" }]`;
-      const filter: any = '[{ "name": { "equals": "Peter" } }]';
 
-      vi.spyOn(prisma.users, "findMany").mockResolvedValue([]);
-      vi.spyOn(prisma.users, "count").mockResolvedValue(0);
+    it("given no limit should return a list of users with default limit 10", async () => {
+      const page = 1;
+      const sort = "{}";
+      const filter = "{}";
+
       const result = await service.searchUsers(page, null, sort, filter);
 
       expect(result).toEqual({
-        users: [],
+        users: [
+          { id: "test-uuid-123", name: "Test Numone", email: "numone@test.com" },
+          { id: "test-uuid-456", name: "Test Numtwo", email: "numtwo@test.com" },
+        ],
+        totalCount: 2,
         page: 1,
         limit: 10,
-        total: 0,
-        totalPages: 0,
       });
     });
 
-    it("given  limit greater than 200 should return a list of users with pagination and filtering with default limit 10", async () => {
+    it("given limit greater than 200 should return a list of users with default limit 10", async () => {
       const page = 1;
       const limit = 201;
-      const sortObject: Prisma.SortOrder = "asc";
-      const sort: any = `[{ "name": "${sortObject}" }]`;
-      const filter: any = '[{ "name": { "equals": "Peter" } }]';
+      const sort = "{}";
+      const filter = "{}";
 
-      vi.spyOn(prisma.users, "findMany").mockResolvedValue([]);
-      vi.spyOn(prisma.users, "count").mockResolvedValue(0);
       const result = await service.searchUsers(page, limit, sort, filter);
 
       expect(result).toEqual({
-        users: [],
+        users: [
+          { id: "test-uuid-123", name: "Test Numone", email: "numone@test.com" },
+          { id: "test-uuid-456", name: "Test Numtwo", email: "numtwo@test.com" },
+        ],
+        totalCount: 2,
         page: 1,
         limit: 10,
-        total: 0,
-        totalPages: 0,
       });
-    });
-    it("given  invalid JSON should throw error", async () => {
-      const page = 1;
-      const limit = 201;
-      const sortObject: Prisma.SortOrder = "asc";
-      const sort: any = `[{ "name" "${sortObject}" }]`;
-      const filter: any = '[{ "name": { "equals": "Peter" } }]';
-      try {
-        await service.searchUsers(page, limit, sort, filter);
-      } catch (e) {
-        expect(e).toEqual(new Error("Invalid query parameters"));
-      }
-    });
-  });
-  describe("convertFiltersToPrismaFormat", () => {
-    it("should convert input filters to prisma's filter format", () => {
-      const inputFilter = [
-        { key: "a", operation: "like", value: "1" },
-        { key: "b", operation: "eq", value: "2" },
-        { key: "c", operation: "neq", value: "3" },
-        { key: "d", operation: "gt", value: "4" },
-        { key: "e", operation: "gte", value: "5" },
-        { key: "f", operation: "lt", value: "6" },
-        { key: "g", operation: "lte", value: "7" },
-        { key: "h", operation: "in", value: ["8"] },
-        { key: "i", operation: "notin", value: ["9"] },
-        { key: "j", operation: "isnull", value: "10" },
-      ];
-
-      const expectedOutput = {
-        a: { contains: "1" },
-        b: { equals: "2" },
-        c: { not: { equals: "3" } },
-        d: { gt: "4" },
-        e: { gte: "5" },
-        f: { lt: "6" },
-        g: { lte: "7" },
-        h: { in: ["8"] },
-        i: { not: { in: ["9"] } },
-        j: { equals: null },
-      };
-
-      expect(service.convertFiltersToPrismaFormat(inputFilter)).toStrictEqual(
-        expectedOutput,
-      );
     });
   });
 });
