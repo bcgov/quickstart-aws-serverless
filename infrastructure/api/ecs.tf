@@ -39,7 +39,7 @@ resource "aws_ecs_task_definition" "node_api_task" {
         },
         {
           name  = "DYNAMODB_ENDPOINT"
-          value = "dynamodb.ca-central-1.amazonaws.com"
+          value = "https://${var.account_id}.ddb.ca-central-1.amazonaws.com"
         },
         {
           name  = "AWS_REGION"

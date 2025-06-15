@@ -17,6 +17,7 @@ locals {
   statefile_key           = "${local.stack_prefix}/${local.app_env}/api/terraform.tfstate"
   statelock_table_name    = "${local.tf_remote_state_prefix}-lock-${local.aws_license_plate}"
   api_image          = get_env("api_image")
+  account_id         = get_env("aws_account_id")
   
 }
 
@@ -45,6 +46,7 @@ generate "tfvars" {
   contents          = <<-EOF
   app_name="${local.stack_prefix}-node-api-${local.app_env}"
   dynamodb_table_name="${local.stack_prefix}-users-${local.app_env}"
+  account_id="${local.account_id}"
 EOF
 }
 
