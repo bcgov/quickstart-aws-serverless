@@ -16,15 +16,13 @@ export class DynamoDBService {
   private dynamoClient: DynamoDBDocumentClient;
   private tableName: string;
   constructor() {
-    const clientConfig: any = {
+    const clientConfig: DynamoDBClientConfig = {
       region: process.env.AWS_REGION || "ca-central-1", // Default to Canada Central if not set
-    };
-    const dynamoEndpoint =
-      process.env.DYNAMODB_ENDPOINT || "http://localhost:8000"; // Default to local DynamoDB endpoint
-    clientConfig.endpoint = dynamoEndpoint;
-    clientConfig.credentials = {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || "dummy",
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "dummy",
+      endpoint: process.env.DYNAMODB_ENDPOINT || "http://localhost:8000", // Default to local DynamoDB endpoint
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "dummy",
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "dummy",
+      },
     };
 
     const client = new DynamoDBClient(
