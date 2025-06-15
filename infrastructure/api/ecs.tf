@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "node_api_task" {
       environment = [
         {
           name  = "DYNAMODB_TABLE_NAME"
-          value = data.terraform_remote_state.database.outputs.dynamodb_table_name
+          value = "${var.dynamodb_table_name}"
         },
         {
           name  = "DYNAMODB_ENDPOINT"
