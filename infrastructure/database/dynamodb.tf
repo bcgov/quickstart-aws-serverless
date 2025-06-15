@@ -40,6 +40,25 @@ resource "aws_dynamodb_table" "users_table" {
     Environment = var.app_env
   }
 }
+# DynamoDB initial data using the aws_dynamodb_table_item resource, remove if not needed
+resource "aws_dynamodb_table_item" "user_items" {
+    for_each = {
+        "john" = { name = "John", email = "John.ipsum@test.com" }
+        "jane" = { name = "Jane", email = "Jane.ipsum@test.com" }
+        "jack" = { name = "Jack", email = "Jack.ipsum@test.com" }
+        "jill" = { name = "Jill", email = "Jill.ipsum@test.com" }
+        "joe"  = { name = "Joe",  email = "Joe.ipsum@test.com" }
+    }
+
+    table_name = aws_dynamodb_table.users_table.name
+    hash_key   = aws_dynamodb_table.users_table.hash_key
+
+    item = jsonencode({
+        id    = { S = each.key }
+        name  = { S = each.value.name }
+        email = { S = each.value.email }
+    })
+}
 
 # Output the DynamoDB table name and ARN for use in other modules
 output "dynamodb_table_name" {
