@@ -34,8 +34,8 @@ services:
     environment:
       <<: *dynamodb-vars
     volumes:
-      - ./dynamo-migrations.sh:/dynamo-migrations.sh:ro
-    entrypoint: ["/bin/sh", "/dynamo-migrations.sh"]
+      - ./dynamo-migrations-local-env.sh:/dynamo-migrations-local-env.sh:ro
+    entrypoint: ["/bin/sh", "/dynamo-migrations-local-env.sh"]
     depends_on:
       dynamodb-local:
         condition: service_healthy
@@ -48,6 +48,8 @@ services:
       <<: *dynamodb-vars
       NODE_ENV: development
       PORT: 3001
+      IS_OFFLINE: 'true'
+      LOG_LEVEL: debug
     image: ${BACKEND_IMAGE:-backend}
     build:
       context: ./backend

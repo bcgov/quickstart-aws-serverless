@@ -43,11 +43,11 @@ resource "aws_dynamodb_table" "users_table" {
 # DynamoDB initial data using the aws_dynamodb_table_item resource, remove if not needed
 resource "aws_dynamodb_table_item" "user_items" {
     for_each = {
-        "john" = { name = "John", email = "John.ipsum@test.com" }
-        "jane" = { name = "Jane", email = "Jane.ipsum@test.com" }
-        "jack" = { name = "Jack", email = "Jack.ipsum@test.com" }
-        "jill" = { name = "Jill", email = "Jill.ipsum@test.com" }
-        "joe"  = { name = "Joe",  email = "Joe.ipsum@test.com" }
+        "1" = { name = "John", email = "John.ipsum@test.com" }
+        "2" = { name = "Jane", email = "Jane.ipsum@test.com" }
+        "3" = { name = "Jack", email = "Jack.ipsum@test.com" }
+        "4" = { name = "Jill", email = "Jill.ipsum@test.com" }
+        "5"  = { name = "Joe",  email = "Joe.ipsum@test.com" }
     }
 
     table_name = aws_dynamodb_table.users_table.name
