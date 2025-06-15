@@ -7,12 +7,6 @@ variable "app_env" {
   type        = string
 }
 
-variable "stack_prefix" {
-  description = "The stack prefix for resource naming"
-  type        = string
-}
-
-
 variable "subnet_app_a" {
   description = "Value of the name tag for a subnet in the APP security group"
   type = string
