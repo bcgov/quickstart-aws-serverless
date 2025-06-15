@@ -1,5 +1,6 @@
 #!/bin/bash
-# This script resumes AWS resources (ECS service and RDS Aurora cluster) in the specified AWS account.
+# This script resumes AWS resources (ECS service) in the specified AWS account.
+# Note: DynamoDB doesn't require resuming like RDS as it's always available
 
 set -e  # Exit on error
 
@@ -91,22 +92,11 @@ main() {
     
     echo "Starting to resume resources for environment: ${env} with stack prefix: ${prefix}"
     
-    # Check DB cluster status
-    local db_status=$(check_db_cluster "$prefix" "$env")
-    
-    if [ "$db_status" == "not-found" ]; then
-        echo "Skipping resume operation, DB cluster does not exist"
-        return 0
-    elif [ "$db_status" == "stopped" ]; then
-        start_db_cluster "$prefix" "$env" || return 1
-    else
-        echo "DB cluster is not in a stopped state. Current state: $db_status"
-    fi
-    
-    # Resume ECS service
+    # Resume ECS service (DynamoDB is always available)
     resume_ecs_service "$prefix" "$env"
     
     echo "Resources have been resumed successfully"
+    echo "Note: DynamoDB doesn't require resuming as it's always available with pay-per-request billing."
 }
 
 # Parse and check arguments

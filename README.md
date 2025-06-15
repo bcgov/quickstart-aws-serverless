@@ -1,23 +1,21 @@
-[![Merge](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/merge.yml)
-[![PR](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pr-open.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pr-open.yml)
-[![PR Validate](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pr-validate.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pr-validate.yml)
-[![CodeQL](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/github-code-scanning/codeql)
-[![Pause AWS Resources](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pause-resources.yml)
-[![Pause AWS Resources](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-containers/actions/workflows/pause-resources.yml)
-# Quickstart for AWS using Aurora Serverless v2, ECS Fargate, and CloudFront
+[![Merge](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/merge.yml)
+[![PR](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-open.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-open.yml)
+[![PR Validate](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-validate.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-validate.yml)
+[![CodeQL](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/github-code-scanning/codeql)
+[![Pause AWS Resources](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pause-resources.yml)
+[![Pause AWS Resources](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pause-resources.yml)
+# Quickstart for AWS using DynamoDB, ECS Fargate, and CloudFront
 
 This template repository provides a ready-to-deploy containerized application stack for AWS, developed by BC Government. It includes a complete application architecture with:
 
-- **Aurora Serverless v2** PostgreSQL database with PostGIS extension
+- **DynamoDB** NoSQL database with pay-per-request billing
 - **ECS Fargate** with mixed FARGATE/FARGATE_SPOT capacity providers for cost-optimized backend services
-- **Flyway Migrations** automated through ECS tasks for database schema management
 - **API Gateway** with VPC link integration for secure backend access
 - **CloudFront** for frontend content delivery with WAF protection
-- **NestJS** TypeScript backend API with Prisma ORM
+- **NestJS** TypeScript backend API with AWS SDK for DynamoDB
 - **React** with Vite for the frontend application
 - **Terragrunt/Terraform** for infrastructure-as-code deployment
 - **GitHub Actions** for CI/CD pipeline automation
-- **AWS Secrets Manager** integration for secure credential management
 
 Use this repository as a starting point to quickly deploy a modern, scalable web application on AWS infrastructure.
 
@@ -32,7 +30,7 @@ Use this repository as a starting point to quickly deploy a modern, scalable web
 
 # Folder Structure
 ```
-/quickstart-aws-containers
+/quickstart-aws-serverless
 ├── .github/                   # GitHub workflows and actions for CI/CD
 │   └── workflows/             # GitHub Actions workflow definitions
 ├── terraform/                 # Terragrunt configuration files for environment management
@@ -42,17 +40,14 @@ Use this repository as a starting point to quickly deploy a modern, scalable web
 ├── infrastructure/            # Terraform code for each AWS infrastructure component
 │   ├── api/                   # ECS Fargate API configuration (ALB, API Gateway, autoscaling)
 │   ├── frontend/              # CloudFront with WAF configuration
-│   └── database/              # Aurora Serverless v2 PostgreSQL configuration
+│   └── database/              # DynamoDB table configuration
 ├── backend/                   # NestJS backend API code
 │   ├── src/                   # Source code with controllers, services, and modules
-│   ├── prisma/                # Prisma ORM schema and migrations
 │   └── Dockerfile             # Container definition for backend service
 ├── frontend/                  # Vite + React SPA
 │   ├── src/                   # React components, routes, and services
 │   ├── e2e/                   # End-to-end tests using Playwright
 │   └── Dockerfile             # Container definition for frontend service
-├── migrations/                # Flyway migrations for database schema management
-│   └── sql/                   # SQL migration scripts
 ├── tests/                     # Test suites beyond component-level tests
 │   ├── integration/           # Integration tests across services
 │   └── load/                  # Load testing scripts for performance testing
@@ -79,21 +74,17 @@ Use this repository as a starting point to quickly deploy a modern, scalable web
     - Flyway migration task execution for database schema management
     - IAM roles and security group configurations
     - AWS Secrets Manager integration for database credentials
-  - **frontend/**: Sets up CloudFront distribution with WAF rules for content delivery.
-  - **database/**: Configures Aurora Serverless v2 PostgreSQL database with networking.
+  - **frontend/**: Sets up CloudFront distribution with WAF rules for content delivery.  
+  - **database/**: Configures DynamoDB table with proper indexes and settings.
 
 - **backend/**: NestJS backend application with TypeScript.
   - **src/**: Application code organized by feature modules.
-  - **prisma/**: Database ORM schema definitions and connection handling.
-  - Includes testing infrastructure and containerization setup.
+  - Includes AWS SDK integration for DynamoDB operations.
 
 - **frontend/**: React-based single-page application built with Vite.
   - **src/**: React components and application logic.
   - **e2e/**: End-to-end tests with Playwright for UI validation.
   - Includes deployment configuration for AWS.
-
-- **migrations/**: Flyway database migration scripts and configuration.
-  - **sql/**: SQL scripts for schema evolution that Flyway executes in order.
 
 - **tests/**: Cross-component test suites to validate the application at a higher level.
   - **integration/**: Tests validating interactions between services.
@@ -126,23 +117,48 @@ docker-compose down
 ## Running Locally without Docker (Complex)
 Prerequisites:
 
-    1. Install JDK 17 and above.
-    2. Install Node.js 22 and above.
-    3. Install Postgres 17.4 with Postgis extension.
-    4. Download flyway.jar file
-Once all the softwares are installed follow below steps.
+  1. Install Node.js 22 and above.
+  2. Install AWS CLI and configure with credentials for DynamoDB Local.
+  3. Install DynamoDB Local for development.
 
-1. Run Postgres DB (better as a service on OS).
-2. Run flyway migrations (this needs to be run everytime changes to migrations folder happen)
+Once all the software is installed follow below steps.
+
+1. Start DynamoDB Local:
 ```sh
-java -jar flyway.jar -url=jdbc:postgresql://$posgtres_host:5432/$postgres_db -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD -baselineOnMigrate=true -schemas=$FLYWAY_DEFAULT_SCHEMA migrate
+# Download and run DynamoDB Local
+java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb -inMemory
 ```
-3. Run backend from root of folder.
+
+2. Create the local table and add sample data:
+```sh
+# Create table
+aws dynamodb create-table \
+  --endpoint-url http://localhost:8000 \
+  --table-name users-local \
+  --attribute-definitions AttributeName=id,AttributeType=S AttributeName=email,AttributeType=S \
+  --key-schema AttributeName=id,KeyType=HASH \
+  --global-secondary-indexes IndexName=EmailIndex,KeySchema=[{AttributeName=email,KeyType=HASH}],Projection={ProjectionType=ALL} \
+  --billing-mode PAY_PER_REQUEST
+
+# Add sample data
+aws dynamodb put-item \
+  --endpoint-url http://localhost:8000 \
+  --table-name users-local \
+  --item '{"id":{"S":"1"}, "name":{"S":"John"}, "email":{"S":"John.ipsum@test.com"}}'
+```
+
+3. Run backend from root of folder:
 ```sh
 cd backend
-npm run start:dev or npm run start:debug
+export DYNAMODB_TABLE_NAME=users-local
+export DYNAMODB_ENDPOINT=http://localhost:8000
+export AWS_REGION=ca-central-1
+export AWS_ACCESS_KEY_ID=dummy
+export AWS_SECRET_ACCESS_KEY=dummy
+npm run start:dev
 ```
-4. Run Frontend from root of folder.
+
+4. Run Frontend from root of folder:
 ```sh
 cd frontend
 npm run dev
@@ -188,7 +204,7 @@ terragrunt plan
 terragrunt apply
 ```
 
-For detailed deployment instructions, refer to the [AWS deployment setup guide](https://github.com/bcgov/quickstart-aws-containers/wiki/Deploy-To-AWS-Using-Terraform).
+For detailed deployment instructions, refer to the [AWS deployment setup guide](./AWS-DEPLOY.md).
 
 # CI/CD Workflows
 
@@ -237,8 +253,8 @@ The repository includes a comprehensive set of GitHub Actions workflows that aut
 
 ### Resource Management
 - **Cost Optimization**: 
-  - `pause-resources.yml`: Pauses resources in specified environments (dev/test/prod) either on schedule, manually, or automatically after deployment
-  - `resume-resources.yml`: Resumes resources in specified environments either on schedule, manually, or automatically before deployment
+  - `pause-resources.yml`: Pauses ECS services in specified environments (dev/test/prod) either on schedule, manually, or automatically after deployment. Note: DynamoDB doesn't require pausing as it uses pay-per-request billing.
+  - `resume-resources.yml`: Resumes ECS services in specified environments either on schedule, manually, or automatically before deployment
 - **Workflow Integration**:
   - Resources are automatically resumed before deployments in the merge workflow
   - Resources are automatically paused after successful deployments to save costs
@@ -268,10 +284,10 @@ For detailed documentation on all GitHub Actions workflows, including their trig
 - Supports ANY method with proxy path integration
 
 #### Database Integration
-- Automatically connects to Aurora PostgreSQL using endpoint discovery
-- Uses master credentials stored in Secrets Manager
-- Applies schema migrations using Flyway in a dedicated ECS task
-- Supports read/write splitting with separate endpoints for read-only operations
+- Automatically connects to DynamoDB using the AWS SDK
+- Uses pay-per-request billing model for cost efficiency
+- Supports both local development with DynamoDB Local and production deployment
+- No migration scripts needed - DynamoDB tables are created via Terraform
 
 # Customizing the Template
 
