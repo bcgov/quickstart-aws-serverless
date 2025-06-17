@@ -47,6 +47,13 @@ resume_ecs_service() {
         echo "Skipping ECS resume operation: Cluster $cluster does not exist"
         return
     fi
+    #check if service exists
+    local service_status=$(aws ecs describe-services --cluster "$cluster" --services "$service" \
+                          --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
+    if [ "$service_status" != "ACTIVE" ]; then
+        echo "Skipping ECS resume operation: Service $service does not exist in cluster $cluster"
+        return
+    fi
     echo "Resuming ECS service ${service} on cluster ${cluster}..."
     # Update scaling policy
     aws application-autoscaling register-scalable-target \
