@@ -75,6 +75,13 @@ jobs:
     - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
       with:
         terraform_version: ${{ env.TF_VERSION }}
+    - name: Get ECR Registry
+      if: inputs.app_env == 'prod'
+      id: ecr-check
+      run: |
+        ECR_REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.ca-central-1.amazonaws.com
+        echo "ecr-registry=$ECR_REGISTRY" >> $GITHUB_OUTPUT
+    
     - name: Setup Terragrunt
       uses: autero1/action-terragrunt@aefb0a43c4f5503a91fefb307745c4d51c26ed0e # v3
       with:
@@ -84,7 +91,7 @@ jobs:
       env:
           target_env: ${{ inputs.environment_name }}
           aws_license_plate: ${{ secrets.AWS_LICENSE_PLATE }}
-          api_image: ghcr.io/${{github.repository}}/backend:${{inputs.tag}}
+          api_image: ${{ (inputs.app_env == 'prod' && inputs.working_directory == 'api' && format('{0}/quickstart-aws-serverless-backend-prod:{1}', steps.ecr-check.outputs.ecr-registry, inputs.tag)) || (format('ghcr.io/{0}/backend:{1}', github.repository, inputs.tag)) }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
       run: |
@@ -97,7 +104,7 @@ jobs:
       env:
           target_env: ${{ inputs.environment_name }}
           aws_license_plate: ${{ secrets.AWS_LICENSE_PLATE }}
-          api_image: ghcr.io/${{github.repository}}/backend:${{inputs.tag}}
+          api_image: ${{ (inputs.app_env == 'prod' && inputs.working_directory == 'api' && format('{0}/quickstart-aws-serverless-backend-prod:{1}', steps.ecr-check.outputs.ecr-registry, inputs.tag)) || (format('ghcr.io/{0}/backend:{1}', github.repository, inputs.tag)) }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
       run: |
@@ -113,7 +120,7 @@ jobs:
       env:
           target_env: ${{ inputs.environment_name }}
           aws_license_plate: ${{ secrets.AWS_LICENSE_PLATE }}
-          api_image: ghcr.io/${{github.repository}}/backend:${{inputs.tag}}
+          api_image: ${{ (inputs.app_env == 'prod' && inputs.working_directory == 'api' && format('{0}/quickstart-aws-serverless-backend-prod:{1}', steps.ecr-check.outputs.ecr-registry, inputs.tag)) || (format('ghcr.io/{0}/backend:{1}', github.repository, inputs.tag)) }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
       run: |
