@@ -22,8 +22,8 @@ jobs:
     name: Vars
     runs-on: ubuntu-24.04
     outputs:
-      tag: ${{ steps.changelog.outputs.tag || github.event.release.tag_name || '' }}
-      version: ${{ steps.changelog.outputs.version || github.event.release.tag_name || '' }}
+      tag: ${{ steps.changelog.outputs.tag || steps.release.outputs.tag || '' }}
+      version: ${{ steps.changelog.outputs.version || steps.release.outputs.version || '' }}
       clean_changelog: ${{ steps.changelog.outputs.clean_changelog || '' }}
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +39,20 @@ jobs:
           skip-on-empty: "false"
           skip-commit: "true"
           git-push: "true"
+      - name: GitHub Release
+        id: release
+        if: (github.event_name == 'release')
+        shell: bash
+        run: |
+          echo "getting tag from release which was done manually in github"
+          # remove all spaces and new lines from the tag name and make it lowercase.
+          # Assign the computed tag value to a shell variable
+          tag=$(echo "${{ github.event.release.tag_name }}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          # Compute version as tag without the leading 'v'
+          version=$(echo "$tag" | sed 's/^v//')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
   retag-images:
     name: Retag Images
     needs: [vars]
