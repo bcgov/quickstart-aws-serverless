@@ -129,7 +129,7 @@ jobs:
             # Apply lifecycle policy separately
             aws ecr put-lifecycle-policy \
             --repository-name ${{ github.event.repository.name }}-${{ matrix.package }}-prod \
-            --lifecycle-policy '{"rules":[{"rulePriority":1,"description":"Keep only 5 tagged images","selection":{"tagStatus":"tagged","countType":"imageCountMoreThan","countNumber":5},"action":{"type":"expire"}},{"rulePriority":2,"description":"Remove untagged images","selection":{"tagStatus":"untagged","countType":"imageCountMoreThan","countNumber":1},"action":{"type":"expire"}}]}' \
+            --lifecycle-policy '{"rules":[{"rulePriority":1,"description":"Keep only 5 tagged images","selection":{"tagStatus":"tagged","tagPatternList":["*"],"countType":"imageCountMoreThan","countNumber":5},"action":{"type":"expire"}},{"rulePriority":2,"description":"Remove untagged images","selection":{"tagStatus":"untagged","countType":"imageCountMoreThan","countNumber":1},"action":{"type":"expire"}}]}' \
             || true
           
           # Pull image from GHCR
