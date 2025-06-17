@@ -13,7 +13,7 @@ permissions:
 jobs:
   backend-tests:
     name: Backend Tests
-    if: ${{ ! github.event.pull_request.draft }}
+    if: (! github.event.pull_request.draft )
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -63,7 +63,7 @@ jobs:
           triggers: ('frontend/')
   trivy:
     name: Trivy Security Scan
-    if: ${{ ! github.event.pull_request.draft }}
+    if: (! github.event.pull_request.draft )
     runs-on: ubuntu-24.04
     permissions:
       contents: read # This is required for actions/checkout
