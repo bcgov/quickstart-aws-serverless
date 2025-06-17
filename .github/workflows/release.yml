@@ -150,7 +150,7 @@ jobs:
     secrets: inherit
   deploy:
     name: Deploy Stack
-    needs: [vars, resume-resources, retag-images]
+    needs: [vars, resume-resources, retag-images, push-to-ecr]
     uses: ./.github/workflows/.deploy_stack.yml
     secrets: inherit
     with:
