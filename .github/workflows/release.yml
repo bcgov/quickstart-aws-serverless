@@ -67,8 +67,9 @@ jobs:
           repository: ${{ github.repository }}/${{ matrix.package }}
           target:  ${{inputs.containers_tag}} # this is the tag of the containers to deploy, defaults to test
           tags: |
-            "prod"
-            "${{ needs.vars.outputs.version }}"
+            prod
+            ${{ needs.vars.outputs.version }}
+            ${{ needs.vars.outputs.tag }}
   resume-resources:
     name: Resume Resources # This job resumes resources for the merged PR which is needed if the resources were paused.
     needs: [vars]
