@@ -133,7 +133,7 @@ jobs:
             || true
           
           # Pull image from GHCR
-          docker pull $GHCR_IMAGE
+          docker pull $GHCR_IMAGE || { echo "Error: Failed to pull image $GHCR_IMAGE"; exit 1; }
           
           # Tag for ECR
           ECR_IMAGE=$ECR_REGISTRY/${{ github.repository.name }}-${{ matrix.package }}-prod:${{ needs.vars.outputs.tag }}
