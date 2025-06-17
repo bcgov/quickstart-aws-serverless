@@ -46,8 +46,7 @@ jobs:
         run: |
           echo "getting tag from release which was done manually in github"
           # remove all spaces and new lines from the tag name and make it lowercase.
-          # Assign the computed tag value to a shell variable
-          tag=$(echo "${{ github.event.release.tag_name }}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+          tag=$(echo "${{ github.event.release.tag_name }}" | tr -d ' \n\r\t' | tr '[:upper:]' '[:lower:]')
           echo "tag=$tag" >> $GITHUB_OUTPUT
           # Compute version as tag without the leading 'v'
           version=$(echo "$tag" | sed 's/^v//')
@@ -67,9 +66,9 @@ jobs:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.package }}
           target:  ${{inputs.containers_tag}} # this is the tag of the containers to deploy, defaults to test
-          tags: >
-            prod
-            ${{ needs.vars.outputs.version}}
+          tags: |
+            "prod"
+            "${{ needs.vars.outputs.version }}"
   resume-resources:
     name: Resume Resources # This job resumes resources for the merged PR which is needed if the resources were paused.
     needs: [vars]
