@@ -46,9 +46,12 @@ jobs:
         run: |
           echo "getting tag from release which was done manually in github"
           # remove all spaces and new lines from the tag name and make it lowercase.
-          echo "tag=$(echo ${{ github.event.release.tag_name }} | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-          # version is tag without v
-          echo "version=$(echo $tag | sed 's/^v//')" >> $GITHUB_OUTPUT
+          # Assign the computed tag value to a shell variable
+          tag=$(echo "${{ github.event.release.tag_name }}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          # Compute version as tag without the leading 'v'
+          version=$(echo "$tag" | sed 's/^v//')
+          echo "version=$version" >> $GITHUB_OUTPUT
 
   retag-images:
     name: Retag Images
