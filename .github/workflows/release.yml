@@ -10,7 +10,7 @@ on:
         default: 'test'
         type: string
 concurrency:
-  group: main
+  group: prod
   cancel-in-progress: false
 # This concurrency group ensures that only one workflow runs at a time for the main branch.
 permissions:
@@ -67,7 +67,7 @@ jobs:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.package }}
           target:  ${{inputs.containers_tag}} # this is the tag of the containers to deploy, defaults to test
-          tags: |
+          tags: >
             prod
             ${{ needs.vars.outputs.version}}
   resume-resources:
