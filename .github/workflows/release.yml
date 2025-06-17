@@ -64,9 +64,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
           
           # Generate multiline tags output for retag-images step
-          tags="prod
-          $version
-          $tag"
+          tags=$(printf "prod\n%s\n%s" "$version" "$tag")
           
           # Trim and set multiline outputs
           echo "tags<<EOF" >> $GITHUB_OUTPUT
