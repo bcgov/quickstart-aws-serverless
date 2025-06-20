@@ -35,12 +35,11 @@ export class UsersService {
   async findAll(): Promise<UserDto[]> {
     const result = await this.dynamoDBService.scan();
     const users = result.Items || [];
-    
     return users.map(user => ({
       id: user.id,
       name: user.name,
       email: user.email
-    }));
+    })).sort((a, b) => a.id.localeCompare(b.id));
   }
 
   async findOne(id: string): Promise<UserDto> {
