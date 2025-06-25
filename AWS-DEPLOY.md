@@ -116,7 +116,7 @@
 ```
 4. Then create a role by clicking `create role` button and then selecting (custom trust policy radio button).
 5. Paste the below JSON after making modifications to set trust relationships of the role with your github repo(<repo_name> ex: bcgov/quickstart-aws-containers)  (<account_number> 12 digits ex:123456789012 ).
-6. account number can be found after loggin into https://login.nimbus.cloud.gov.bc.ca/
+6. account number can be found after logging into https://login.nimbus.cloud.gov.bc.ca/
 
 
 ```json
