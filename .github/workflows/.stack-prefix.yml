@@ -49,4 +49,4 @@ jobs:
 
           # Set output
           echo "STACK_PREFIX=$final_name" >> $GITHUB_OUTPUT
-          echo "Generated prefix: $STACK_PREFIX"
+          echo "Generated prefix: $final_name"
