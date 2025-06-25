@@ -5,6 +5,7 @@ locals {
 
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${var.app_name}"
+  tags = local.common_tags
 }
 
 resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
@@ -73,6 +74,7 @@ resource "aws_ecs_task_definition" "node_api_task" {
   lifecycle {
     create_before_destroy = true
   }
+  tags = local.common_tags
 }
 
 
