@@ -1,8 +1,9 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "${var.app_name}-frontend-${data.aws_caller_identity.current.account_id}-${var.aws_region}"
+  bucket = "${var.app_name}-frontend"
   force_destroy = true
+  tags = var.common_tags
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "frontend_encryption" {
@@ -48,8 +49,9 @@ resource "aws_s3_bucket_policy" "site_policy" {
 }
 
 resource "aws_s3_bucket" "cloudfront_logs" {
-  bucket = "${var.app_name}-cloudfront-logs"
+  bucket = "${var.app_name}-cf-logs"
   force_destroy = true
+  tags = var.common_tags
 }
 
 resource "aws_s3_bucket_ownership_controls" "cloudfront_logs_ownership" {
@@ -160,7 +162,5 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cloudfront_default_certificate = true
   }
 
-  tags = {
-    Name = "${var.app_name}-distribution"
-  }
+  tags = var.common_tags
 }

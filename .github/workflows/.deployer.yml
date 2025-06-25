@@ -104,6 +104,7 @@ jobs:
           api_image: ${{ steps.image-tags.outputs.api-image }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
+          repo_name: ${{ github.event.repository.name }}
       run: |
           # Run terraform
           terragrunt run-all ${{inputs.command}} --terragrunt-non-interactive
@@ -117,6 +118,7 @@ jobs:
           api_image: ${{ steps.image-tags.outputs.api-image }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
+          repo_name: ${{ github.event.repository.name }}
       run: |
           terragrunt output -json > outputs.json
           #print the output
@@ -133,6 +135,7 @@ jobs:
           api_image: ${{ steps.image-tags.outputs.api-image }}
           app_env: ${{inputs.app_env}}
           stack_prefix: ${{ inputs.stack_prefix }}
+          repo_name: ${{ github.event.repository.name }}
       run: |
           terragrunt output -json > outputs.json
           #print the output

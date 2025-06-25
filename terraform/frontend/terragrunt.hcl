@@ -15,6 +15,7 @@ locals {
   statefile_bucket_name   = "${local.tf_remote_state_prefix}-${local.aws_license_plate}-${local.target_env}" 
   statefile_key           = "${local.stack_prefix}/${local.app_env}/frontend/terraform.tfstate"
   statelock_table_name    = "${local.tf_remote_state_prefix}-lock-${local.aws_license_plate}" 
+  repo_name               = get_env("repo_name")
 }
 
 # Remote S3 state for Terraform.
@@ -42,6 +43,13 @@ generate "tfvars" {
   contents          = <<-EOF
     app_env="${local.app_env}"
     app_name="${local.stack_prefix}-frontend-${local.app_env}"
+    common_tags = {
+      "Environment" = "${local.target_env}"
+      "AppEnv"      = "${local.app_env}"
+      "AppName"     = "${local.stack_prefix}-frontend-${local.app_env}"
+      "RepoName"    = ${local.repo_name}
+      "ManagedBy"   = "Terraform"
+    }
 EOF
 }
 
