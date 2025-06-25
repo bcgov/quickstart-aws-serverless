@@ -47,7 +47,7 @@ resource "aws_cloudfront_distribution" "api" {
     count      = var.is_public_api ? 1 : 0
     provider   = aws.cloudfront_waf
     web_acl_id = aws_wafv2_web_acl.cloudfront_acl[0].arn
-    comment    = "Distribution for ${var.app_name} api."
+    comment    = "Distribution for ${var.app_name} api, for github repository :: ${var.repo_name}"
 
     origin {
         domain_name = "${aws_apigatewayv2_api.app.id}.execute-api.${var.aws_region}.amazonaws.com"

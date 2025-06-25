@@ -105,3 +105,7 @@ variable "dynamodb_table_name" {
     error_message = "The DynamoDB table name must not be empty."
   }
 }
+variable "repo_name" {
+  description = "Name of the repository for resource descriptions and tags"
+  type        = string
+}

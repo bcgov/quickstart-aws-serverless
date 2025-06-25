@@ -113,7 +113,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   depends_on = [aws_s3_bucket_policy.cloudfront_logs_policy] 
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "Distribution for ${var.app_name} site."
+  comment             = "Distribution for ${var.app_name} site from github repository :: ${var.repo_name}"
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
   web_acl_id          = aws_wafv2_web_acl.waf_cloudfront.arn
