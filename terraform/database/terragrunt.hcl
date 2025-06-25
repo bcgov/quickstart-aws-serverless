@@ -47,7 +47,7 @@ generate "tfvars" {
       "Environment" = "${local.target_env}"
       "AppEnv"      = "${local.app_env}"
       "AppName"     = "${local.stack_prefix}"
-      "RepoName"    = ${local.repo_name}
+      "RepoName"    = "${local.repo_name}"
       "ManagedBy"   = "Terraform"
     }
 EOF
