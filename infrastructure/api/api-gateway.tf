@@ -7,7 +7,7 @@ resource "aws_apigatewayv2_vpc_link" "app" {
 resource "aws_apigatewayv2_api" "app" {
   name          = var.app_name
   protocol_type = "HTTP"
-  tags = var.common_tags
+  tags = local.common_tags
 }
 
 resource "aws_apigatewayv2_integration" "app" {
