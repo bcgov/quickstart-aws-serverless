@@ -21,7 +21,18 @@ jobs:
         shell: bash
         run: |
           # Get repository name
-          STACK_PREFIX=$(echo -n "${{ github.event.repository.name }}" | md5sum | cut -c 1-10) # Default to a hash of the repo name with first 10 characters
+          # Extract repository name from GITHUB_REPOSITORY (format: owner/repo)
+          REPO_NAME=${{ github.event.repository.name }}
+          # Check if repository name length is less than 31 characters
+          if [ ${#REPO_NAME} -lt 31 ]; then
+            STACK_PREFIX="$REPO_NAME"
+            echo "Using full repository name as stack prefix"
+          else
+            STACK_PREFIX="${REPO_NAME:0:30}"
+            echo "Repository name too long, truncated to 30 characters"
+          fi
+          # Remove any invalid characters (only alphanumeric and hyphens allowed for stack names)
+          STACK_PREFIX=$(echo "$STACK_PREFIX" | tr -cd 'a-zA-Z0-9-')
           # Set output
           echo "STACK_PREFIX=$STACK_PREFIX" >> $GITHUB_OUTPUT
           echo "Generated prefix: $STACK_PREFIX"

@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "${var.app_name}-frontend"
+  bucket = "${var.app_name}-static-assets"
   force_destroy = true
   tags = var.common_tags
 }
