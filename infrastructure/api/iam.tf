@@ -20,7 +20,7 @@ data "aws_iam_policy" "appDynamoDB" {
 
 # ECS task execution role
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${var.app_name}_ecs_task_execution_role"
+  name               = "${var.app_name}_ecs_role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_role.json
 
   tags = local.common_tags
@@ -33,7 +33,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role" {
 }
 
 resource "aws_iam_role_policy" "ecs_task_execution_cwlogs" {
-  name = "${var.app_name}-ecs_task_execution_cwlogs"
+  name = "${var.app_name}-ecs_cwlogs"
   role = aws_iam_role.ecs_task_execution_role.id
 
   policy = <<-EOF

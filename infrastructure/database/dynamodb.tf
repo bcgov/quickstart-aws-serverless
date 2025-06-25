@@ -34,11 +34,7 @@ resource "aws_dynamodb_table" "users_table" {
   # Deletion protection for production
   deletion_protection_enabled = contains(["prod"], var.app_env) ? true : false
 
-  tags = {
-    managed-by = "terraform"
-    Name       = "${var.app_name}-users-${var.app_env}"
-    Environment = var.app_env
-  }
+  tags = var.common_tags
 }
 # DynamoDB initial data using the aws_dynamodb_table_item resource, remove if not needed
 resource "aws_dynamodb_table_item" "user_items" {

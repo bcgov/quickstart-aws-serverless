@@ -115,7 +115,9 @@
 }
 ```
 4. Then create a role by clicking `create role` button and then selecting (custom trust policy radio button).
-5. Paste the below JSON after making modifications to set trust relationships of the role with your github repo(<repo_name> ex: bcgov/quickstart-aws-containers) .
+5. Paste the below JSON after making modifications to set trust relationships of the role with your github repo(<repo_name> ex: bcgov/quickstart-aws-containers)  (<account_number> 12 digits ex:123456789012 ).
+6. account number can be found after logging into https://login.nimbus.cloud.gov.bc.ca/
+
 
 ```json
 {
@@ -140,9 +142,17 @@
     ]
 }
 ```
-6. Click on Next button, then add the policies after searching for it and then enabling it by checking the checkbox.
-7. Finally give a role name for ex: `GHA_CI_CD` and then click on `create role` button.
-7. After the role is created copy the ARN, it would be like `arn:aws:iam::<account_number>:role/<role_name>` , `role_name` is what was created on step 4.
-8. Paste this value into github secrets, repository secret or environment secret based on your needs. The key to use is `AWS_DEPLOY_ROLE_ARN`
-9. Paste the license plate value( 6 alphanumeric characters ex: `ab9okj`) without the env as a repository secret. The Key to use is `AWS_LICENSE_PLATE`
-10. After this the github action workflows would be able to deploy the stack to AWS.
+7. Click on Next button, then add the policies after searching for it and then enabling it by checking the checkbox.
+8. Finally give a role name for ex: `GHA_CI_CD` and then click on `create role` button.
+9. After the role is created copy the ARN, it would be like `arn:aws:iam::<account_number>:role/<role_name>` , `role_name` is what was created on step 4.
+10. Paste this value into github secrets, repository secret or environment secret based on your needs. The key to use is `AWS_DEPLOY_ROLE_ARN`
+  ```text
+  AWS_DEPLOY_ROLE_ARN
+  ```
+
+11. Paste the license plate value (6 alphanumeric characters ex: `ab9okj`) without the env as a repository secret. The Key to use is `AWS_LICENSE_PLATE`. The license plate number can be found for a specific namespace-env from nimbus.
+
+  ```text
+  AWS_LICENSE_PLATE
+  ```
+12. After this the github action workflows would be able to deploy the stack to AWS.

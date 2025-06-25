@@ -6,7 +6,7 @@ provider "aws" {
 resource "aws_wafv2_web_acl" "cloudfront_acl" {
     count    = var.is_public_api ? 1 : 0
     provider = aws.cloudfront_waf
-    name     = "api-web-acl-${var.app_name}"
+    name     = "${var.app_name}-api-cf-waf"
     scope    = "CLOUDFRONT"
 
     default_action {
@@ -40,6 +40,7 @@ resource "aws_wafv2_web_acl" "cloudfront_acl" {
         metric_name                = "AppWebACL"
         sampled_requests_enabled   = true
     }
+    tags = var.common_tags
 }
 
 resource "aws_cloudfront_distribution" "api" {
@@ -93,16 +94,18 @@ resource "aws_cloudfront_distribution" "api" {
     logging_config {
         bucket          = "${aws_s3_bucket.cloudfront_api_logs[0].bucket}.s3.amazonaws.com"
         include_cookies = true
-        prefix          = "cloudfront/api/"
+        prefix          = "cf/api/"
     }
 
     depends_on = [aws_s3_bucket_policy.cloudfront_log_policy]
+    tags = var.common_tags
 }
 
 resource "aws_s3_bucket" "cloudfront_api_logs" {
     count         = var.is_public_api ? 1 : 0
-    bucket        = "cloudfront-api-logs-${var.app_name}"
+    bucket        = "cf-api-logs-${var.app_name}"
     force_destroy = true
+    tags = var.common_tags
 }
 
 resource "aws_s3_bucket_public_access_block" "cloudfront_api_logs_block" {
@@ -140,14 +143,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudfront_api_lo
 resource "aws_s3_bucket_policy" "cloudfront_log_policy" {
     count  = var.is_public_api ? 1 : 0
     bucket = aws_s3_bucket.cloudfront_api_logs[0].id
-
     policy = jsonencode({
         Version = "2012-10-17",
         Statement = [
             {
                 Effect    = "Allow",
                 Action    = "s3:PutObject",
-                Resource  = "arn:aws:s3:::${aws_s3_bucket.cloudfront_api_logs[0].bucket}/cloudfront/api/*",
+                Resource  = "arn:aws:s3:::${aws_s3_bucket.cloudfront_api_logs[0].bucket}/cf/api/*",
                 Principal = {
                     Service = "cloudfront.amazonaws.com"
                 }
