@@ -50,6 +50,7 @@ generate "tfvars" {
       "RepoName"    = "${local.repo_name}"
       "ManagedBy"   = "Terraform"
     }
+    repo_name="${local.repo_name}"
 EOF
 }
 
