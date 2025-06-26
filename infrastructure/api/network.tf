@@ -1,92 +1,59 @@
-locals {
-  env_map = {
-    dev     = "Dev"
-    test    = "Test"
-    prod    = "Prod"
-    tools   = "Tools"
-    unclass = "UnClass"
-  }
-  environment        = local.env_map[lower(var.target_env)]
-  vpc_name           = "${local.environment}_vpc"
-  availability_zones = ["a", "b"]
-  web_subnet_names   = [for az in local.availability_zones : "Web_${local.environment}_az${az}_net"]
-  app_subnet_names   = [for az in local.availability_zones : "App_${local.environment}_az${az}_net"]
-  data_subnet_names  = [for az in local.availability_zones : "Data_${local.environment}_az${az}_net"]
+# Use the common networking module instead of duplicating all networking code
+# This module is already imported in api-gateway.tf as module.networking
+# So this file can be empty or removed as networking is handled by the module
 
-  security_group_name_suffix = "_sg"
+# If you need to reference networking data sources directly in this file,
+# you can access them through the module outputs:
+# module.networking.vpc.id
+# module.networking.subnets.web.ids
+# module.networking.security_groups.web.id
+# etc.
 
-  web_security_group_name  = "Web${local.security_group_name_suffix}"
-  app_security_group_name  = "App${local.security_group_name_suffix}"
-  data_security_group_name = "Data${local.security_group_name_suffix}"
+# For compatibility with existing ALB and ECS resources that reference data sources,
+# create aliases to the module outputs. The networking module is imported in api-gateway.tf
+# Note: Some resources may need to be updated to reference module.networking directly
+
+# Import networking module here for this file to use
+module "networking_local" {
+  source = "../modules/networking"
+  
+  target_env = var.target_env
 }
 
+# Compatibility data sources for existing resource references
 data "aws_vpc" "main" {
-  filter {
-    name = "tag:Name"
-    values = [
-    local.vpc_name]
-  }
+  id = module.networking_local.vpc.id
 }
 
 data "aws_subnets" "web" {
   filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.main.id]
-  }
-
-  filter {
-    name   = "tag:Name"
-    values = local.web_subnet_names
+    name   = "subnet-id"
+    values = module.networking_local.subnets.web.ids
   }
 }
 
 data "aws_subnets" "app" {
   filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.main.id]
-  }
-
-  filter {
-    name   = "tag:Name"
-    values = local.app_subnet_names
+    name   = "subnet-id"
+    values = module.networking_local.subnets.app.ids
   }
 }
 
 data "aws_subnets" "data" {
   filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.main.id]
+    name   = "subnet-id"
+    values = module.networking_local.subnets.data.ids
   }
-
-  filter {
-    name   = "tag:Name"
-    values = local.data_subnet_names
-  }
-}
-
-data "aws_subnet" "web" {
-  for_each = toset(data.aws_subnets.web.ids)
-  id       = each.value
-}
-
-data "aws_subnet" "app" {
-  for_each = toset(data.aws_subnets.app.ids)
-  id       = each.value
-}
-
-data "aws_subnet" "data" {
-  for_each = toset(data.aws_subnets.data.ids)
-  id       = each.value
 }
 
 data "aws_security_group" "web" {
-  name = local.web_security_group_name
+  id = module.networking_local.security_groups.web.id
 }
 
 data "aws_security_group" "app" {
-  name = local.app_security_group_name
+  id = module.networking_local.security_groups.app.id
 }
 
 data "aws_security_group" "data" {
-  name = local.data_security_group_name
+  id = module.networking_local.security_groups.data.id
 }

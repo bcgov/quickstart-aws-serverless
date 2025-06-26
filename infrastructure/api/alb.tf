@@ -1,7 +1,3 @@
-locals {
-  common_tags        = var.common_tags
-}
-
 resource "aws_alb" "app-alb" {
 
   name                             = var.app_name
@@ -9,7 +5,7 @@ resource "aws_alb" "app-alb" {
   subnets                          = data.aws_subnets.web.ids
   security_groups                  = [data.aws_security_group.web.id]
   enable_cross_zone_load_balancing = true
-  tags                             = local.common_tags
+  tags                             = module.common.common_tags
 
   lifecycle {
     ignore_changes = [access_logs]
@@ -44,5 +40,5 @@ resource "aws_alb_target_group" "app" {
     unhealthy_threshold = "2"
   }
 
-  tags = local.common_tags
+  tags = module.common.common_tags
 }

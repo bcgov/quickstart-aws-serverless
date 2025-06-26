@@ -65,7 +65,7 @@ resource "aws_cloudwatch_metric_alarm" "node_api_service_cpu_low" {
 
   alarm_actions = [aws_appautoscaling_policy.api_down.arn]
 
-  tags = local.common_tags
+  tags = module.common.common_tags
 }
 
 # CloudWatch alarm that triggers the autoscaling up policy
@@ -86,5 +86,5 @@ resource "aws_cloudwatch_metric_alarm" "node_api_service_cpu_high" {
 
   alarm_actions = [aws_appautoscaling_policy.api_up.arn]
 
-  tags = local.common_tags
+  tags = module.common.common_tags
 }

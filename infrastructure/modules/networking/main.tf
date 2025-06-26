@@ -1,3 +1,4 @@
+# Common Networking Module Main Configuration
 locals {
   env_map = {
     dev     = "Dev"
@@ -8,26 +9,24 @@ locals {
   }
   environment        = local.env_map[lower(var.target_env)]
   vpc_name           = "${local.environment}_vpc"
-  availability_zones = ["a", "b"]
-  web_subnet_names   = [for az in local.availability_zones : "Web_${local.environment}_az${az}_net"]
-  app_subnet_names   = [for az in local.availability_zones : "App_${local.environment}_az${az}_net"]
-  data_subnet_names  = [for az in local.availability_zones : "Data_${local.environment}_az${az}_net"]
+  web_subnet_names   = [for az in var.availability_zones : "Web_${local.environment}_az${az}_net"]
+  app_subnet_names   = [for az in var.availability_zones : "App_${local.environment}_az${az}_net"]
+  data_subnet_names  = [for az in var.availability_zones : "Data_${local.environment}_az${az}_net"]
 
-  security_group_name_suffix = "_sg"
-
-  web_security_group_name  = "Web${local.security_group_name_suffix}"
-  app_security_group_name  = "App${local.security_group_name_suffix}"
-  data_security_group_name = "Data${local.security_group_name_suffix}"
+  web_security_group_name  = "Web${var.security_group_name_suffix}"
+  app_security_group_name  = "App${var.security_group_name_suffix}"
+  data_security_group_name = "Data${var.security_group_name_suffix}"
 }
 
+# VPC Data Source
 data "aws_vpc" "main" {
   filter {
     name = "tag:Name"
-    values = [
-    local.vpc_name]
+    values = [local.vpc_name]
   }
 }
 
+# Subnet Data Sources
 data "aws_subnets" "web" {
   filter {
     name   = "vpc-id"
@@ -64,6 +63,7 @@ data "aws_subnets" "data" {
   }
 }
 
+# Individual Subnet Data Sources
 data "aws_subnet" "web" {
   for_each = toset(data.aws_subnets.web.ids)
   id       = each.value
@@ -79,6 +79,7 @@ data "aws_subnet" "data" {
   id       = each.value
 }
 
+# Security Group Data Sources
 data "aws_security_group" "web" {
   name = local.web_security_group_name
 }

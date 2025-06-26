@@ -1,4 +1,3 @@
-
 data "aws_caller_identity" "current" {}
 # ECS task execution role data
 data "aws_iam_policy_document" "ecs_task_execution_role" {
@@ -23,7 +22,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   name               = "${var.app_name}_ecs_role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_role.json
 
-  tags = local.common_tags
+  tags = module.common.common_tags
 }
 
 # ECS task execution role policy attachment
@@ -73,7 +72,7 @@ resource "aws_iam_role" "app_container_role" {
 }
 EOF
 
-  tags = local.common_tags
+  tags = module.common.common_tags
 }
 
 resource "aws_iam_role_policy" "app_container_cwlogs" {
