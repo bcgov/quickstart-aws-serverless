@@ -28,8 +28,7 @@ check_parameters() {
 }
 # Check if ECS cluster exists
 function check_ecs_cluster() {
-    local cluster_name="ecs-cluster-${STACK_PREFIX}-node-api-${ENVIRONMENT}"
-    local status=$(aws ecs describe-clusters --clusters "$cluster_name" \
+    local status=$(aws ecs describe-clusters --clusters "$CLUSTER_NAME" \
                   --query 'clusters[0].status' --output text 2>/dev/null || echo "INACTIVE")
     echo "$status"
 }
@@ -39,26 +38,24 @@ function check_ecs_cluster() {
 resume_ecs_service() {
     local prefix=$1
     local env=$2
-    local cluster="ecs-cluster-${prefix}-node-api-${env}"
-    local service="${prefix}-node-api-${env}-service"
     local cluster_status=$3
     
     if [ "$cluster_status" != "ACTIVE" ]; then
-        echo "Skipping ECS resume operation: Cluster $cluster does not exist"
+        echo "Skipping ECS resume operation: Cluster $CLUSTER_NAME does not exist"
         return
     fi
     #check if service exists
-    local service_status=$(aws ecs describe-services --cluster "$cluster" --services "$service" \
+    local service_status=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" \
                           --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
     if [ "$service_status" != "ACTIVE" ]; then
         echo "Skipping ECS resume operation: Service $service does not exist in cluster $cluster"
         return
     fi
-    echo "Resuming ECS service ${service} on cluster ${cluster}..."
+    echo "Resuming ECS service ${SERVICE_NAME} on cluster ${CLUSTER_NAME}..."
     # Update scaling policy
     aws application-autoscaling register-scalable-target \
         --service-namespace ecs \
-        --resource-id service/${cluster}/${service} \
+        --resource-id service/${CLUSTER_NAME}/${service} \
         --scalable-dimension ecs:service:DesiredCount \
         --min-capacity 1 \
         --max-capacity 2 \
@@ -67,8 +64,8 @@ resume_ecs_service() {
     
     # Update service desired count
     aws ecs update-service \
-        --cluster ${cluster} \
-        --service ${service} \
+        --cluster ${CLUSTER_NAME} \
+        --service ${SERVICE_NAME} \
         --desired-count 1 \
         --no-cli-pager \
         --output json
@@ -94,6 +91,8 @@ main() {
 # Parse and check arguments
 ENVIRONMENT=${1}
 STACK_PREFIX=${2}
+CLUSTER_NAME="${STACK_PREFIX}-node-api-${ENVIRONMENT}"
+SERVICE_NAME="${STACK_PREFIX}-node-api-${ENVIRONMENT}"
 check_parameters "$ENVIRONMENT" "$STACK_PREFIX"
 
 # Execute main function
