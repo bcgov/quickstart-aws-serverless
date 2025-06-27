@@ -65,7 +65,7 @@ check_aws_cli() {
         exit 1
     fi
     
-    if ! aws sts get-caller-identity &> /dev/null; then
+    if ! aws sts get-caller-identity --no-cli-pager &> /dev/null; then
         print_error "AWS CLI is not configured or you don't have permissions. Please run 'aws configure' first."
         exit 1
     fi
@@ -191,17 +191,17 @@ create_iam_policy() {
 EOF
 
     # Check if policy already exists
-    if aws iam get-policy --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" &> /dev/null; then
+    if aws iam get-policy --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" --no-cli-pager &> /dev/null; then
         print_warning "Policy $policy_name already exists. Updating policy..."
         
         # Get current policy version
-        current_version=$(aws iam get-policy --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" --query 'Policy.DefaultVersionId' --output text)
+        current_version=$(aws iam get-policy --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" --query 'Policy.DefaultVersionId' --output text --no-cli-pager)
         
         # Create new policy version
         aws iam create-policy-version \
             --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" \
             --policy-document file:///tmp/terraform-deploy-policy.json \
-            --set-as-default > /dev/null
+            --set-as-default --no-cli-pager > /dev/null
         
         print_success "Policy $policy_name updated successfully"
     else
@@ -211,7 +211,7 @@ EOF
             --policy-document file:///tmp/terraform-deploy-policy.json \
             --description "Policy for GitHub Actions to deploy infrastructure via Terraform" \
             --query 'Policy.Arn' \
-            --output text)
+            --output text --no-cli-pager)
         
         print_success "Policy created: $POLICY_ARN"
     fi
@@ -256,13 +256,14 @@ EOF
 
     local role_arn
     # Check if role already exists
-    if aws iam get-role --role-name "$role_name" &> /dev/null; then
+    if aws iam get-role --role-name "$role_name" --no-cli-pager &> /dev/null; then
         print_warning "Role $role_name already exists. Updating trust policy..."
         
         # Update trust policy
         aws iam update-assume-role-policy \
             --role-name "$role_name" \
-            --policy-document file:///tmp/trust-policy.json
+            --policy-document file:///tmp/trust-policy.json \
+            --no-cli-pager
         
         print_success "Role trust policy updated"
         role_arn="arn:aws:iam::${account_number}:role/${role_name}"
@@ -273,7 +274,7 @@ EOF
             --assume-role-policy-document file:///tmp/trust-policy.json \
             --description "Role for GitHub Actions to deploy infrastructure via Terraform" \
             --query 'Role.Arn' \
-            --output text)
+            --output text --no-cli-pager)
         
         print_success "Role created: $role_arn"
         
@@ -282,7 +283,7 @@ EOF
         max_attempts=10
         attempt=1
         while [ $attempt -le $max_attempts ]; do
-            if aws iam get-role --role-name "$role_name" &> /dev/null; then
+            if aws iam get-role --role-name "$role_name" --no-cli-pager &> /dev/null; then
                 print_success "Role $role_name is now available"
                 break
             else
@@ -301,7 +302,8 @@ EOF
     print_status "Attaching policy to role..."
     aws iam attach-role-policy \
         --role-name "$role_name" \
-        --policy-arn "arn:aws:iam::${account_number}:policy/${policy_name}"
+        --policy-arn "arn:aws:iam::${account_number}:policy/${policy_name}" \
+        --no-cli-pager
     
     print_success "Policy attached to role"
     
@@ -310,6 +312,125 @@ EOF
     
     # Write role ARN to a temporary file instead of echoing it
     echo "$role_arn" > /tmp/role_arn.txt
+}
+
+
+# Function to create S3 bucket for Terraform state
+create_terraform_state_bucket() {
+    local bucket_name="$1"
+    local region="$2"
+    
+    print_status "Creating S3 bucket for Terraform state: $bucket_name"
+    
+    # Check if bucket already exists
+    if aws s3api head-bucket --bucket "$bucket_name" --region "$region" --no-cli-pager &> /dev/null; then
+        print_warning "S3 bucket $bucket_name already exists. Skipping creation."
+        return
+    fi
+    
+    # Create bucket
+    if [ "$region" = "us-east-1" ]; then
+        # us-east-1 doesn't need LocationConstraint
+        aws s3api create-bucket \
+            --bucket "$bucket_name" \
+            --region "$region" \
+            --no-cli-pager
+    else
+        aws s3api create-bucket \
+            --bucket "$bucket_name" \
+            --region "$region" \
+            --create-bucket-configuration LocationConstraint="$region" \
+            --no-cli-pager
+    fi
+    # Enable versioning
+    aws s3api put-bucket-versioning \
+        --bucket "$bucket_name" \
+        --versioning-configuration Status=Enabled \
+        --no-cli-pager
+    
+    # Enable server-side encryption
+    aws s3api put-bucket-encryption \
+        --bucket "$bucket_name" \
+        --server-side-encryption-configuration '{
+            "Rules": [
+                {
+                    "ApplyServerSideEncryptionByDefault": {
+                        "SSEAlgorithm": "AES256"
+                    },
+                    "BucketKeyEnabled": true
+                }
+            ]
+        }' \
+        --no-cli-pager
+    
+    # Block public access
+    aws s3api put-public-access-block \
+        --bucket "$bucket_name" \
+        --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true" \
+        --no-cli-pager
+    
+    # Add bucket policy to restrict access
+    cat > /tmp/bucket-policy.json << EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyInsecureConnections",
+            "Effect": "Deny",
+            "Principal": "*",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::${bucket_name}",
+                "arn:aws:s3:::${bucket_name}/*"
+            ],
+            "Condition": {
+                "Bool": {
+                    "aws:SecureTransport": "false"
+                }
+            }
+        }
+    ]
+}
+EOF
+    
+aws s3api put-bucket-policy \
+    --bucket "$bucket_name" \
+    --policy file:///tmp/bucket-policy.json \
+    --no-cli-pager
+
+rm -f /tmp/bucket-policy.json
+
+print_success "S3 bucket $bucket_name created and configured successfully"
+}
+
+# Function to create DynamoDB table for Terraform state locking
+create_terraform_lock_table() {
+    local table_name="$1"
+    local region="$2"
+    
+    print_status "Creating DynamoDB table for Terraform state locking: $table_name"
+    
+    # Check if table already exists
+    if aws dynamodb describe-table --table-name "$table_name" --region "$region" --no-cli-pager &> /dev/null; then
+        print_warning "DynamoDB table $table_name already exists. Skipping creation."
+        return
+    fi
+    
+    # Create DynamoDB table
+    aws dynamodb create-table \
+        --table-name "$table_name" \
+        --attribute-definitions AttributeName=LockID,AttributeType=S \
+        --key-schema AttributeName=LockID,KeyType=HASH \
+        --billing-mode PAY_PER_REQUEST \
+        --region "$region" \
+        --tags Key=Purpose,Value=TerraformStateLocking Key=ManagedBy,Value=Script \
+        --no-cli-pager
+    
+    # Wait for table to be active
+    print_status "Waiting for DynamoDB table to become active..."
+    aws dynamodb wait table-exists --table-name "$table_name" --region "$region" --no-cli-pager
+    
+    print_success "DynamoDB table $table_name created successfully"
 }
 
 
@@ -324,7 +445,7 @@ main() {
     echo
     
     # Get current AWS account number
-    CURRENT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+    CURRENT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text --no-cli-pager)
     print_status "Current AWS Account: $CURRENT_ACCOUNT"
     echo
     
@@ -337,6 +458,22 @@ main() {
     AWS_ACCOUNT_NUMBER=${AWS_ACCOUNT_NUMBER:-$CURRENT_ACCOUNT}
     validate_account_number "$AWS_ACCOUNT_NUMBER"
     
+    read -p "Enter AWS license plate (6 characters): " AWS_LICENSE_PLATE
+    validate_input "$AWS_LICENSE_PLATE" "AWS license plate"
+    if [[ ! "$AWS_LICENSE_PLATE" =~ ^[a-zA-Z0-9]{6}$ ]]; then
+        print_error "AWS license plate must be exactly 6 alphanumeric characters"
+        exit 1
+    fi
+    
+    read -p "Enter target environment (e.g., dev, test, prod): " TARGET_ENV
+    validate_input "$TARGET_ENV" "Target environment"
+    
+    # Get current AWS region
+    CURRENT_REGION=$(aws configure get region --no-cli-pager)
+    read -p "Enter AWS region [$CURRENT_REGION]: " AWS_REGION
+    AWS_REGION=${AWS_REGION:-$CURRENT_REGION}
+    validate_input "$AWS_REGION" "AWS region"
+    
     read -p "Enter IAM policy name [TerraformDeployPolicy]: " POLICY_NAME
     POLICY_NAME=${POLICY_NAME:-TerraformDeployPolicy}
     validate_input "$POLICY_NAME" "Policy name"
@@ -345,12 +482,21 @@ main() {
     ROLE_NAME=${ROLE_NAME:-GHA_CI_CD}
     validate_input "$ROLE_NAME" "Role name"
     
+    # Generate resource names based on inputs
+    TERRAFORM_STATE_BUCKET="terraform-remote-state-${AWS_LICENSE_PLATE}-${TARGET_ENV}"
+    TERRAFORM_LOCK_TABLE="terraform-remote-state-lock-${AWS_LICENSE_PLATE}"
+    
     echo
     print_status "Configuration Summary:"
     echo "  Repository: $REPO_NAME"
     echo "  AWS Account: $AWS_ACCOUNT_NUMBER"
+    echo "  AWS License Plate: $AWS_LICENSE_PLATE"
+    echo "  Target Environment: $TARGET_ENV"
+    echo "  AWS Region: $AWS_REGION"
     echo "  Policy Name: $POLICY_NAME"
     echo "  Role Name: $ROLE_NAME"
+    echo "  Terraform State Bucket: $TERRAFORM_STATE_BUCKET"
+    echo "  Terraform Lock Table: $TERRAFORM_LOCK_TABLE"
     echo
     
     read -p "Do you want to proceed? (y/N): " CONFIRM
@@ -361,6 +507,14 @@ main() {
     
     echo
     print_status "Starting deployment setup..."
+    
+    # Create Terraform remote state infrastructure
+    print_status "Creating Terraform remote state infrastructure..."
+    create_terraform_state_bucket "$TERRAFORM_STATE_BUCKET" "$AWS_REGION"
+    echo
+    
+    create_terraform_lock_table "$TERRAFORM_LOCK_TABLE" "$AWS_REGION"
+    echo
     
     
     # Create IAM policy
@@ -377,15 +531,30 @@ main() {
     
     print_success "Setup completed successfully!"
     echo
+    print_status "Created Resources:"
+    echo "  - S3 Bucket: $TERRAFORM_STATE_BUCKET"
+    echo "  - DynamoDB Table: $TERRAFORM_LOCK_TABLE"
+    echo "  - IAM Policy: $POLICY_NAME"
+    echo "  - IAM Role: $ROLE_NAME"
+    echo
     print_status "Next Steps:"
     echo "1. Add the following secrets to your GitHub repository:"
     echo "   - AWS_DEPLOY_ROLE_ARN: $ROLE_ARN"
-    echo "   - AWS_LICENSE_PLATE: <your-6-character-license-plate>"
+    echo "   - AWS_LICENSE_PLATE: $AWS_LICENSE_PLATE"
     echo
-    echo "2. You can add these secrets via:"
+    echo "2. Set the following environment variables for Terragrunt:"
+    echo "   - stack_prefix: <your-application-prefix>"
+    echo "   - target_env: $TARGET_ENV"
+    echo "   - aws_license_plate: $AWS_LICENSE_PLATE"
+    echo "   - app_env: <your-app-environment>"
+    echo "   - api_image: <your-api-docker-image>"
+    echo "   - repo_name: $REPO_NAME"
+    echo
+    echo "3. You can add these secrets via:"
     echo "   - Repository Settings > Secrets and variables > Actions"
     echo "   - Or use GitHub CLI: gh secret set AWS_DEPLOY_ROLE_ARN --body \"$ROLE_ARN\""
     echo
+    print_status "Your Terraform remote state backend is now ready!"
     print_status "Your GitHub Actions workflows should now be able to deploy to AWS!"
 }
 
