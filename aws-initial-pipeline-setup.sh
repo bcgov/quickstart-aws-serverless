@@ -403,37 +403,6 @@ rm -f /tmp/bucket-policy.json
 print_success "S3 bucket $bucket_name created and configured successfully"
 }
 
-# Function to create DynamoDB table for Terraform state locking
-create_terraform_lock_table() {
-    local table_name="$1"
-    local region="$2"
-    
-    print_status "Creating DynamoDB table for Terraform state locking: $table_name"
-    
-    # Check if table already exists
-    if aws dynamodb describe-table --table-name "$table_name" --region "$region" --no-cli-pager &> /dev/null; then
-        print_warning "DynamoDB table $table_name already exists. Skipping creation."
-        return
-    fi
-    
-    # Create DynamoDB table
-    aws dynamodb create-table \
-        --table-name "$table_name" \
-        --attribute-definitions AttributeName=LockID,AttributeType=S \
-        --key-schema AttributeName=LockID,KeyType=HASH \
-        --billing-mode PAY_PER_REQUEST \
-        --region "$region" \
-        --tags Key=Purpose,Value=TerraformStateLocking Key=ManagedBy,Value=Script \
-        --no-cli-pager
-    
-    # Wait for table to be active
-    print_status "Waiting for DynamoDB table to become active..."
-    aws dynamodb wait table-exists --table-name "$table_name" --region "$region" --no-cli-pager
-    
-    print_success "DynamoDB table $table_name created successfully"
-}
-
-
 # Main script
 main() {
     print_status "AWS IAM Policy and Role Setup for GitHub Actions"
@@ -484,7 +453,6 @@ main() {
     
     # Generate resource names based on inputs
     TERRAFORM_STATE_BUCKET="terraform-remote-state-${AWS_LICENSE_PLATE}-${TARGET_ENV}"
-    TERRAFORM_LOCK_TABLE="terraform-remote-state-lock-${AWS_LICENSE_PLATE}"
     
     echo
     print_status "Configuration Summary:"
@@ -496,7 +464,6 @@ main() {
     echo "  Policy Name: $POLICY_NAME"
     echo "  Role Name: $ROLE_NAME"
     echo "  Terraform State Bucket: $TERRAFORM_STATE_BUCKET"
-    echo "  Terraform Lock Table: $TERRAFORM_LOCK_TABLE"
     echo
     
     read -p "Do you want to proceed? (y/N): " CONFIRM
@@ -512,10 +479,6 @@ main() {
     print_status "Creating Terraform remote state infrastructure..."
     create_terraform_state_bucket "$TERRAFORM_STATE_BUCKET" "$AWS_REGION"
     echo
-    
-    create_terraform_lock_table "$TERRAFORM_LOCK_TABLE" "$AWS_REGION"
-    echo
-    
     
     # Create IAM policy
     create_iam_policy "$POLICY_NAME"
@@ -533,7 +496,6 @@ main() {
     echo
     print_status "Created Resources:"
     echo "  - S3 Bucket: $TERRAFORM_STATE_BUCKET"
-    echo "  - DynamoDB Table: $TERRAFORM_LOCK_TABLE"
     echo "  - IAM Policy: $POLICY_NAME"
     echo "  - IAM Role: $ROLE_NAME"
     echo

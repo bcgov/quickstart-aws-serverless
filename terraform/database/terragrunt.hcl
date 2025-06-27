@@ -30,6 +30,7 @@ terraform {
     region         = "${local.region}"                    # AWS region where the bucket is located
     dynamodb_table = "${local.statelock_table_name}"
     encrypt        = true
+    use_lockfile   = true  # Enable native S3 locking
   }
 }
 EOF

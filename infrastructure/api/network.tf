@@ -87,3 +87,90 @@ data "aws_security_group" "app" {
 data "aws_security_group" "data" {
   name = local.data_security_group_name
 }
+# Data source for route tables
+data "aws_route_tables" "app_route_tables" {
+  vpc_id = data.aws_vpc.main.id
+}
+
+# ECR API VPC Endpoint
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = data.aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = data.aws_subnets.app.ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = merge(var.common_tags, {
+    Name = "${var.app_name}-ecr-api-endpoint"
+  })
+}
+
+# ECR Docker VPC Endpoint
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = data.aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = data.aws_subnets.app.ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = merge(var.common_tags, {
+    Name = "${var.app_name}-ecr-dkr-endpoint"
+  })
+}
+
+
+# CloudWatch Logs VPC Endpoint
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = data.aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = data.aws_subnets.app.ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = merge(var.common_tags, {
+    Name = "${var.app_name}-logs-endpoint"
+  })
+}
+
+# Security Group for VPC Endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "${var.app_name}-vpc-endpoints-sg"
+  description = "Security group for VPC endpoints"
+  vpc_id      = data.aws_vpc.main.id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [data.aws_vpc.main.cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.common_tags, {
+    Name = "${var.app_name}-vpc-endpoints-sg"
+  })
+}
+
