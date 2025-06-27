@@ -9,7 +9,7 @@
 2. click on `Click for Credentials` for the namespace and copy the information and paste it into your bash terminal, then run following commands.
 ```bash
 chmod +x aws-initial-pipeline-setup.sh
-./aws-initial-pipeline-setup
+./aws-initial-pipeline-setup.sh
 ```
 
 ## OR Execute Steps in the console(UI) to setup the secret in github for terraform deployment
