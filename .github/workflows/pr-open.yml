@@ -61,13 +61,21 @@ jobs:
     with:
       app_env: dev
     secrets: inherit
+  push-to-ecr:
+    name: Push Images to ECR
+    if: (github.event_name == 'workflow_dispatch')
+    needs: [builds]
+    uses: ./.github/workflows/.ecr.yaml
+    with:
+      environment: prod
+      tag: 'manual'
   deploy-to-dev:
     name: Deploy to Dev
     if: (github.event_name == 'workflow_dispatch')
     concurrency:
       group: deploy-dev-${{ github.event.number || 'latest' }}
       cancel-in-progress: false
-    needs: [resume-resources-dev, plan-stack]
+    needs: [resume-resources-dev, plan-stack, push-to-ecr]
     uses: ./.github/workflows/.deploy_stack.yml
     with:
       environment_name: prod # ::change it to:: dev , template repo only has PROD
