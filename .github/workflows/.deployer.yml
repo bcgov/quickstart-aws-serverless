@@ -76,7 +76,6 @@ jobs:
       with:
         terraform_version: ${{ env.TF_VERSION }}
     - name: Get ECR Registry
-      if: inputs.app_env == 'prod'
       id: ecr-check
       run: |
         ECR_REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.ca-central-1.amazonaws.com
@@ -85,11 +84,11 @@ jobs:
       id: image-tags
       shell: bash
       run: |
-        if [[ "${{ inputs.app_env }}" == "prod" && "${{ inputs.working_directory }}" == "api" ]]; then
-          API_IMAGE="${{ steps.ecr-check.outputs.ecr-registry }}/${{ github.event.repository.name }}-backend-prod:${{ inputs.tag }}"
-        else
-          API_IMAGE="ghcr.io/${{ github.repository }}/backend:${{ inputs.tag }}"
-        fi
+        #if [[ "${{ inputs.app_env }}" == "prod" && "${{ inputs.working_directory }}" == "api" ]]; then
+        API_IMAGE="${{ steps.ecr-check.outputs.ecr-registry }}/${{ github.event.repository.name }}-backend:${{ inputs.tag }}"
+        #else
+        #  API_IMAGE="ghcr.io/${{ github.repository }}/backend:${{ inputs.tag }}"
+        #fi
         echo "api-image=$API_IMAGE" >> $GITHUB_OUTPUT
     
     - name: Setup Terragrunt
