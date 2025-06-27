@@ -95,6 +95,7 @@ jobs:
     with:
       environment: prod
       tag: ${{ needs.vars.outputs.tag }} # this is the tag of the containers to push
+    secrets: inherit
   resume-resources:
     name: Resume Resources # This job resumes resources for the merged PR which is needed if the resources were paused.
     needs: [vars]

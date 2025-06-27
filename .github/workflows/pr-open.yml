@@ -69,6 +69,7 @@ jobs:
     with:
       environment: prod
       tag: 'manual'
+    secrets: inherit
   deploy-to-dev:
     name: Deploy to Dev
     if: (github.event_name == 'workflow_dispatch')
