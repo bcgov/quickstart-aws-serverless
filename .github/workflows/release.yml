@@ -92,6 +92,7 @@ jobs:
     name: Push Images to ECR
     needs: [vars, retag-images]
     runs-on: ubuntu-24.04
+    environment: prod
     strategy:
       matrix:
         package: [backend]
@@ -154,7 +155,7 @@ jobs:
     uses: ./.github/workflows/.deploy_stack.yml
     secrets: inherit
     with:
-      environment_name: dev # since we only have one namespace dev, update this to PROD
+      environment_name: prod
       command: apply
       tag: ${{ needs.vars.outputs.tag}} # this is the tag of the containers to deploy
       app_env: prod
