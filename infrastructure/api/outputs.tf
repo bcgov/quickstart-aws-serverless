@@ -3,16 +3,6 @@ output "apigw_url" {
   value       = var.is_public_api ? module.cloudfront_api[0].distribution_url : module.api_gateway.api_endpoint
 }
 
-output "api_gateway_id" {
-  description = "API Gateway ID"
-  value       = module.api_gateway.api_id
-}
-
-output "api_gateway_endpoint" {
-  description = "API Gateway endpoint URL"
-  value       = module.api_gateway.api_endpoint
-}
-
 output "cloudfront_distribution_id" {
   description = "CloudFront distribution ID (if public API)"
   value       = var.is_public_api ? module.cloudfront_api[0].distribution_id : null
