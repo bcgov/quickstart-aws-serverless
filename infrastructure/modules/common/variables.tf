@@ -1,12 +1,9 @@
-# Common Variables Module
-# These are the standard variables used across all infrastructure modules
-
 variable "target_env" {
-  description = "AWS workload account environment (dev, test, prod, tools, unclass)"
+  description = "AWS workload account environment (dev, test, prod)"
   type        = string
   
   validation {
-    condition     = contains(["dev", "test", "prod", "tools", "unclass"], var.target_env)
+    condition     = contains(["dev", "test", "prod"], var.target_env)
     error_message = "Target environment must be one of: dev, test, prod, tools, unclass."
   }
 }

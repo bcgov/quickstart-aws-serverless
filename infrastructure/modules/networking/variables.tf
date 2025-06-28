@@ -1,4 +1,3 @@
-# Common Networking Module Variables
 variable "target_env" {
   description = "Target environment (dev, test, prod, tools, unclass)"
   type        = string
