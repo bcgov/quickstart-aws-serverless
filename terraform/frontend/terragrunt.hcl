@@ -28,7 +28,7 @@ terraform {
     bucket         = "${local.statefile_bucket_name}"
     key            = "${local.statefile_key}"            # Path and name of the state file within the bucket
     region         = "${local.region}"                    # AWS region where the bucket is located
-    dynamodb_table = "${local.statelock_table_name}"
+    use_lockfile   = true  # Enable native S3 locking
     encrypt        = true
   }
 }

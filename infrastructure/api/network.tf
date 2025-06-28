@@ -1,26 +1,22 @@
-# Use the common networking module instead of duplicating all networking code
-# This module is already imported in api-gateway.tf as module.networking
-# So this file can be empty or removed as networking is handled by the module
-
-# If you need to reference networking data sources directly in this file,
-# you can access them through the module outputs:
-# module.networking.vpc.id
-# module.networking.subnets.web.ids
-# module.networking.security_groups.web.id
-# etc.
-
-# For compatibility with existing ALB and ECS resources that reference data sources,
-# create aliases to the module outputs. The networking module is imported in api-gateway.tf
-# Note: Some resources may need to be updated to reference module.networking directly
-
-# Import networking module here for this file to use
-module "networking_local" {
-  source = "../modules/networking"
-  
-  target_env = var.target_env
+locals {
+  env_map = {
+    dev     = "Dev"
+    test    = "Test"
+    prod    = "Prod"
+    tools   = "Tools"
+    unclass = "UnClass"
+  }
+  environment        = local.env_map[lower(var.target_env)]
+  vpc_name           = "${local.environment}"
+  availability_zones = ["A", "B"]
+  web_subnet_names   = [for az in local.availability_zones : "${local.environment}-Web-MainTgwAttach-${az}"]
+  app_subnet_names   = [for az in local.availability_zones : "${local.environment}-App-${az}"]
+  data_subnet_names  = [for az in local.availability_zones : "${local.environment}-Data-${az}"]
+  web_security_group_name  = "Web"
+  app_security_group_name  = "App"
+  data_security_group_name = "Data"
 }
 
-# Compatibility data sources for existing resource references
 data "aws_vpc" "main" {
   id = module.networking_local.vpc.id
 }
@@ -57,3 +53,4 @@ data "aws_security_group" "app" {
 data "aws_security_group" "data" {
   id = module.networking_local.security_groups.data.id
 }
+

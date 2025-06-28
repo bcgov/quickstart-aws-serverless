@@ -8,14 +8,14 @@ locals {
     unclass = "UnClass"
   }
   environment        = local.env_map[lower(var.target_env)]
-  vpc_name           = "${local.environment}_vpc"
-  web_subnet_names   = [for az in var.availability_zones : "Web_${local.environment}_az${az}_net"]
-  app_subnet_names   = [for az in var.availability_zones : "App_${local.environment}_az${az}_net"]
-  data_subnet_names  = [for az in var.availability_zones : "Data_${local.environment}_az${az}_net"]
-
-  web_security_group_name  = "Web${var.security_group_name_suffix}"
-  app_security_group_name  = "App${var.security_group_name_suffix}"
-  data_security_group_name = "Data${var.security_group_name_suffix}"
+  vpc_name           = "${local.environment}"
+  availability_zones = ["A", "B"]
+  web_subnet_names   = [for az in local.availability_zones : "${local.environment}-Web-MainTgwAttach-${az}"]
+  app_subnet_names   = [for az in local.availability_zones : "${local.environment}-App-${az}"]
+  data_subnet_names  = [for az in local.availability_zones : "${local.environment}-Data-${az}"]
+  web_security_group_name  = "Web"
+  app_security_group_name  = "App"
+  data_security_group_name = "Data"
 }
 
 # VPC Data Source
