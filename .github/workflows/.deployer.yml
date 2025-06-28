@@ -84,7 +84,7 @@ jobs:
       id: image-tags
       shell: bash
       run: |
-        API_IMAGE="${{ steps.ecr-check.outputs.ecr-registry }}/${{ github.repository }}/backend:${{ inputs.tag }}"
+        API_IMAGE="${{ steps.ecr-check.outputs.ecr-registry }}/${{ github.repository }}:backend-${{ inputs.tag }}"
         echo "api-image=$API_IMAGE" >> $GITHUB_OUTPUT
     
     - name: Setup Terragrunt
