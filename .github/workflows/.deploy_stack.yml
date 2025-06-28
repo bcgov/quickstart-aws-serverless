@@ -70,7 +70,13 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           GHCR_IMAGE: ghcr.io/${{ github.repository }}/${{ matrix.package }}:${{ inputs.tag }}
         run: |
-          # Pull image from GHCR
+          # Check if command is apply and validate image exists
+          if [ "${{ inputs.command }}" == "apply" ]; then
+            docker manifest inspect $GHCR_IMAGE > /dev/null 2>&1 || { echo "Error: Image $GHCR_IMAGE does not exist and command is apply"; exit 1; }
+          else
+            echo "Command is not apply, continuing even if image doesn't exist"
+            docker manifest inspect $GHCR_IMAGE > /dev/null 2>&1 || { echo "Warning: Image $GHCR_IMAGE does not exist, but continuing as command is not apply"; exit 0; }
+          fi
           docker pull $GHCR_IMAGE || { echo "Error: Failed to pull image $GHCR_IMAGE"; exit 1; }
           
           # Tag for ECR
