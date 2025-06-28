@@ -104,6 +104,16 @@ variable "api_origin_domain_name" {
   type        = string
   default     = null
 }
+variable "alb_origin_domain_name" {
+  description = "Domain name of the ALB origin"
+  type        = string
+  default     = null
+}
+variable "alb_origin_id" {
+  description = "Origin ID for ALB"
+  type        = string
+  default     = "alb-origin"
+}
 
 variable "api_origin_id" {
   description = "Origin ID for API"

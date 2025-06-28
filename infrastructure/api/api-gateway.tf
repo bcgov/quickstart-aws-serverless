@@ -1,4 +1,4 @@
-# Import common configurations
+/**# Import common configurations
 module "common" {
   source = "../modules/common"
   
@@ -46,3 +46,4 @@ locals {
   api_integration_id = module.api_gateway.integration.id
   api_stage_name     = module.api_gateway.stage.name
 }
+**/

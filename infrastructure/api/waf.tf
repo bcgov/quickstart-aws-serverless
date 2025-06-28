@@ -46,11 +46,12 @@ module "cloudfront_api" {
   enabled          = true
   
   # API Origin Configuration
-  api_origin_domain_name     = "${module.api_gateway.api_id}.execute-api.${var.aws_region}.amazonaws.com"
-  api_origin_id             = "http-api-origin"
-  api_origin_protocol_policy = "https-only"
-  api_origin_ssl_protocols   = ["TLSv1.2"]
-  
+  #api_origin_domain_name     = "${module.api_gateway.api_id}.execute-api.${var.aws_region}.amazonaws.com"
+  #api_origin_id             = "http-api-origin"
+  #api_origin_protocol_policy = "https-only"
+  #api_origin_ssl_protocols   = ["TLSv1.2"]
+  alb_origin_domain_name = aws_alb.app-alb.dns_name
+  alb_origin_id          = "api-alb-origin"
   # WAF Integration
   web_acl_arn = module.waf_api[0].web_acl_arn
   

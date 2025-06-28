@@ -46,7 +46,16 @@ resource "aws_cloudfront_distribution" "this" {
       }
     }
   }
+  # ALB Origin Configuration
+  dynamic "origin" {
+    for_each = var.distribution_type == "alb" ? [1] : []
+    content {
+      domain_name = var.alb_origin_domain_name
+      origin_id   = var.alb_origin_id
+    }
+  }
 
+  
   # Default Cache Behavior
   default_cache_behavior {
     allowed_methods  = var.cache_allowed_methods
