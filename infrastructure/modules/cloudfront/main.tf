@@ -60,7 +60,7 @@ resource "aws_cloudfront_distribution" "this" {
   default_cache_behavior {
     allowed_methods  = var.cache_allowed_methods
     cached_methods   = var.cache_cached_methods
-    target_origin_id = var.distribution_type == "s3" ? var.s3_origin_id : var.api_origin_id
+    target_origin_id = var.distribution_type == "s3" ? var.s3_origin_id : (var.distribution_type == "api" ? var.api_origin_id : var.alb_origin_id)
     
     viewer_protocol_policy = var.cache_viewer_protocol_policy
     min_ttl                = var.cache_min_ttl
