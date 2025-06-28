@@ -10,8 +10,8 @@ locals {
   vpc_name           = "${local.environment}"
   availability_zones = ["A", "B"]
   web_subnet_names   = [for az in local.availability_zones : "${local.environment}-Web-MainTgwAttach-${az}"]
-  app_subnet_names   = [for az in local.availability_zones : "${local.environment}-Data-${az}"]
-  data_subnet_names  = [for az in local.availability_zones : "${local.environment}-App-${az}"]
+  app_subnet_names   = [for az in local.availability_zones : "${local.environment}-App-${az}"]
+  data_subnet_names  = [for az in local.availability_zones : "${local.environment}-Data-${az}"]
   web_security_group_name  = "Web"
   app_security_group_name  = "App"
   data_security_group_name = "Data"
