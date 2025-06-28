@@ -1,7 +1,14 @@
 #!/bin/bash
 
-# Script to create AWS IAM policy and role for GitHub Actions deployment
-# This automates the steps described in AWS-DEPLOY.md
+# Script to create AWS IAM policy, role, S3 bucket for Terraform state, and ECR repository
+# for GitHub Actions CI/CD workflows. This automates the complete infrastructure
+# setup needed for secure AWS deployments via GitHub Actions.
+# 
+# It creates:
+# - IAM policy with necessary AWS permissions
+# - IAM role with GitHub OIDC trust relationship
+# - S3 bucket for Terraform remote state with versioning and encryption
+# - ECR repository with lifecycle policies
 
 set -e  # Exit on any error
 
@@ -403,6 +410,89 @@ rm -f /tmp/bucket-policy.json
 print_success "S3 bucket $bucket_name created and configured successfully"
 }
 
+# Function to create ECR repository with lifecycle policies
+create_ecr_repository() {
+    local repo_name="$1"
+    local region="$2"
+    
+    print_status "Creating ECR repository: $repo_name"
+    
+    # Check if repository already exists
+    if aws ecr describe-repositories --repository-names "$repo_name" --region "$region" --no-cli-pager &> /dev/null; then
+        print_warning "ECR repository $repo_name already exists. Skipping creation."
+        
+        # Update repository to be mutable (in case it was previously immutable)
+        aws ecr put-image-tag-mutability \
+            --repository-name "$repo_name" \
+            --image-tag-mutability MUTABLE \
+            --region "$region" \
+            --no-cli-pager
+        
+        print_success "ECR repository $repo_name is now mutable"
+    else
+        # Create new ECR repository
+        aws ecr create-repository \
+            --repository-name "$repo_name" \
+            --image-tag-mutability MUTABLE \
+            --region "$region" \
+            --no-cli-pager > /dev/null
+        
+        print_success "ECR repository created: $repo_name"
+    fi
+    
+    # Create lifecycle policy to manage image retention
+    print_status "Setting up lifecycle policy for ECR repository..."
+    
+    cat > /tmp/ecr-lifecycle-policy.json << 'EOF'
+{
+    "rules": [
+        {
+            "rulePriority": 1,
+            "description": "Keep only 5 most recent tagged images",
+            "selection": {
+                "tagStatus": "tagged",
+                "tagPatternList": ["*"],
+                "countType": "imageCountMoreThan",
+                "countNumber": 5
+            },
+            "action": {
+                "type": "expire"
+            }
+        },
+        {
+            "rulePriority": 2,
+            "description": "Delete untagged images older than 1 day",
+            "selection": {
+                "tagStatus": "untagged",
+                "countType": "sinceImagePushed",
+                "countUnit": "days",
+                "countNumber": 1
+            },
+            "action": {
+                "type": "expire"
+            }
+        }
+    ]
+}
+EOF
+
+    # Apply lifecycle policy
+    aws ecr put-lifecycle-policy \
+        --repository-name "$repo_name" \
+        --lifecycle-policy-text file:///tmp/ecr-lifecycle-policy.json \
+        --region "$region" \
+        --no-cli-pager > /dev/null
+    
+    # Clean up temporary file
+    rm -f /tmp/ecr-lifecycle-policy.json
+    
+    print_success "Lifecycle policy applied to ECR repository $repo_name"
+    print_status "Policy details:"
+    echo "  - Maximum tagged images: 5"
+    echo "  - Untagged images older than 1 day will be deleted"
+    echo "  - Repository is mutable (tags can be overwritten)"
+}
+
 # Main script
 main() {
     print_status "AWS IAM Policy and Role Setup for GitHub Actions"
@@ -451,6 +541,11 @@ main() {
     ROLE_NAME=${ROLE_NAME:-GHA_CI_CD}
     validate_input "$ROLE_NAME" "Role name"
     
+    # Extract repo name from GitHub repository for ECR
+    read -p "Enter ECR repository name [$REPO_NAME]: " ECR_REPO_NAME
+    ECR_REPO_NAME=${ECR_REPO_NAME:-$REPO_NAME}
+    validate_input "$REPO_NAME" "ECR repository name"
+    
     # Generate resource names based on inputs
     TERRAFORM_STATE_BUCKET="terraform-remote-state-${AWS_LICENSE_PLATE}-${TARGET_ENV}"
     
@@ -463,6 +558,7 @@ main() {
     echo "  AWS Region: $AWS_REGION"
     echo "  Policy Name: $POLICY_NAME"
     echo "  Role Name: $ROLE_NAME"
+    echo "  ECR Repository: $ECR_REPO_NAME"
     echo "  Terraform State Bucket: $TERRAFORM_STATE_BUCKET"
     echo
     
@@ -492,12 +588,17 @@ main() {
     rm -f /tmp/role_arn.txt
     echo
     
+    # Create ECR repository
+    create_ecr_repository "$ECR_REPO_NAME" "$AWS_REGION"
+    echo
+    
     print_success "Setup completed successfully!"
     echo
     print_status "Created Resources:"
     echo "  - S3 Bucket: $TERRAFORM_STATE_BUCKET"
     echo "  - IAM Policy: $POLICY_NAME"
     echo "  - IAM Role: $ROLE_NAME"
+    echo "  - ECR Repository: $ECR_REPO_NAME"
     echo
     print_status "Next Steps:"
     echo "1. Add the following secrets to your GitHub repository:"
@@ -511,8 +612,13 @@ main() {
     echo "   - app_env: <your-app-environment>"
     echo "   - api_image: <your-api-docker-image>"
     echo "   - repo_name: $REPO_NAME"
+    echo "   - ecr_repository: $ECR_REPO_NAME"
     echo
-    echo "3. You can add these secrets via:"
+    echo "3. Your ECR repository is ready at:"
+    echo "   - ${AWS_ACCOUNT_NUMBER}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+    echo "   - Repository is mutable with lifecycle policies applied"
+    echo
+    echo "4. You can add these secrets via:"
     echo "   - Repository Settings > Secrets and variables > Actions"
     echo "   - Or use GitHub CLI: gh secret set AWS_DEPLOY_ROLE_ARN --body \"$ROLE_ARN\""
     echo
