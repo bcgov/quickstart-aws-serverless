@@ -1,3 +1,14 @@
+# Import common configurations
+module "common" {
+  source = "../modules/common"
+  
+  target_env    = var.target_env
+  app_env       = var.app_env
+  app_name      = var.app_name
+  repo_name     = var.repo_name
+  common_tags   = var.common_tags
+}
+
 # DynamoDB Table for Users
 resource "aws_dynamodb_table" "users_table" {
   name           = "${var.app_name}-users-${var.app_env}"
@@ -23,7 +34,7 @@ resource "aws_dynamodb_table" "users_table" {
 
   # Enable point-in-time recovery for production environments
   point_in_time_recovery {
-    enabled = contains(["prod"], var.app_env) ? true : false
+    enabled = module.common.is_production
   }
 
   # Server-side encryption
@@ -32,9 +43,9 @@ resource "aws_dynamodb_table" "users_table" {
   }
 
   # Deletion protection for production
-  deletion_protection_enabled = contains(["prod"], var.app_env) ? true : false
+  deletion_protection_enabled = module.common.is_production
 
-  tags = var.common_tags
+  tags = module.common.common_tags
 }
 # DynamoDB initial data using the aws_dynamodb_table_item resource, remove if not needed
 resource "aws_dynamodb_table_item" "user_items" {

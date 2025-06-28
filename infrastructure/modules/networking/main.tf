@@ -1,3 +1,4 @@
+# Common Networking Module Main Configuration
 locals {
   env_map = {
     dev     = "Dev"
@@ -17,14 +18,15 @@ locals {
   data_security_group_name = "Data"
 }
 
+# VPC Data Source
 data "aws_vpc" "main" {
   filter {
     name = "tag:Name"
-    values = [
-    local.vpc_name]
+    values = [local.vpc_name]
   }
 }
 
+# Subnet Data Sources
 data "aws_subnets" "web" {
   filter {
     name   = "vpc-id"
@@ -61,6 +63,7 @@ data "aws_subnets" "data" {
   }
 }
 
+# Individual Subnet Data Sources
 data "aws_subnet" "web" {
   for_each = toset(data.aws_subnets.web.ids)
   id       = each.value
@@ -76,6 +79,7 @@ data "aws_subnet" "data" {
   id       = each.value
 }
 
+# Security Group Data Sources
 data "aws_security_group" "web" {
   name = local.web_security_group_name
 }
@@ -87,4 +91,3 @@ data "aws_security_group" "app" {
 data "aws_security_group" "data" {
   name = local.data_security_group_name
 }
-

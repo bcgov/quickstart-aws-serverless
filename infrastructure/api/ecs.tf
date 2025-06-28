@@ -5,7 +5,7 @@ locals {
 
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${var.app_name}"
-  tags = local.common_tags
+  tags = module.common.common_tags
 }
 
 resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
@@ -74,7 +74,7 @@ resource "aws_ecs_task_definition" "node_api_task" {
   lifecycle {
     create_before_destroy = true
   }
-  tags = local.common_tags
+  tags = module.common.common_tags
 }
 
 
@@ -96,8 +96,8 @@ resource "aws_ecs_service" "node_api_service" {
   }
 
   network_configuration {
-    security_groups  = [data.aws_security_group.app.id]
-    subnets          = data.aws_subnets.app.ids
+    security_groups  = [module.networking.security_groups.app.id]
+    subnets          = module.networking.subnets.app.ids
     assign_public_ip = false
   }
 
@@ -108,5 +108,5 @@ resource "aws_ecs_service" "node_api_service" {
   }
   wait_for_steady_state = true
   depends_on            = [aws_iam_role_policy_attachment.ecs_task_execution_role]
-  tags                  = local.common_tags
+  tags                  = module.common.common_tags
 }

@@ -41,10 +41,7 @@ on:
         value: ${{ jobs.infra.outputs.CF_DOMAIN }}
       CF_DISTRIBUTION_ID:
         value: ${{ jobs.infra.outputs.CF_DISTRIBUTION_ID }}
-    
 
-    
-      
 env:
     TG_VERSION: 0.63.6
     TF_VERSION: 1.12.2
