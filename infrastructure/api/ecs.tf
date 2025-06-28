@@ -96,8 +96,8 @@ resource "aws_ecs_service" "node_api_service" {
   }
 
   network_configuration {
-    security_groups  = [data.aws_security_group.app.id]
-    subnets          = data.aws_subnets.app.ids
+    security_groups  = [module.networking.security_groups.app.id]
+    subnets          = module.networking.subnets.app.ids
     assign_public_ip = false
   }
 
