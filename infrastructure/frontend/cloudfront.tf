@@ -9,13 +9,6 @@ module "common" {
   common_tags   = var.common_tags
 }
 
-# Import networking configurations (for consistency)
-module "networking" {
-  source = "../modules/networking"
-  
-  target_env = var.target_env
-}
-
 # Create the frontend S3 bucket using the secure bucket module
 module "frontend_bucket" {
   source = "../modules/s3-secure-bucket"

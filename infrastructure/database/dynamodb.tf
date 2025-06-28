@@ -5,15 +5,8 @@ module "common" {
   target_env    = var.target_env
   app_env       = var.app_env
   app_name      = var.app_name
-  repo_name     = "quickstart-aws-serverless"  # default value since repo_name may not be in database vars
+  repo_name     = var.repo_name
   common_tags   = var.common_tags
-}
-
-# Import networking configurations (for consistency)
-module "networking" {
-  source = "../modules/networking"
-  
-  target_env = var.target_env
 }
 
 # DynamoDB Table for Users
