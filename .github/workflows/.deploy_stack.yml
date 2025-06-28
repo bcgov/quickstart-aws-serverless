@@ -73,18 +73,19 @@ jobs:
           # Check if command is apply and validate image exists
           if [ "${{ inputs.command }}" == "apply" ]; then
             docker manifest inspect $GHCR_IMAGE > /dev/null 2>&1 || { echo "Error: Image $GHCR_IMAGE does not exist and command is apply"; exit 1; }
+            docker pull $GHCR_IMAGE || { echo "Error: Failed to pull image $GHCR_IMAGE"; exit 1; }
+            
+            # Tag for ECR
+            ECR_IMAGE=$ECR_REGISTRY/${{ github.repository }}:${{ matrix.package }}-${{ inputs.tag }}
+            docker tag $GHCR_IMAGE $ECR_IMAGE
+            
+            # Push to ECR
+            docker push $ECR_IMAGE
           else
-            echo "Command is not apply, continuing even if image doesn't exist"
-            docker manifest inspect $GHCR_IMAGE > /dev/null 2>&1 || { echo "Warning: Image $GHCR_IMAGE does not exist, but continuing as command is not apply"; exit 0; }
+            echo "Command is not apply, continuing"
+            exit 0;
           fi
-          docker pull $GHCR_IMAGE || { echo "Error: Failed to pull image $GHCR_IMAGE"; exit 1; }
           
-          # Tag for ECR
-          ECR_IMAGE=$ECR_REGISTRY/${{ github.repository }}:${{ matrix.package }}-${{ inputs.tag }}
-          docker tag $GHCR_IMAGE $ECR_IMAGE
-          
-          # Push to ECR
-          docker push $ECR_IMAGE
   stack-prefix:
     name: Stack Prefix
     needs: ecr
