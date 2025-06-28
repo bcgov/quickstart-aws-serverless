@@ -52,12 +52,14 @@ resource "aws_cloudfront_distribution" "this" {
     content {
       domain_name = var.alb_origin_domain_name
       origin_id   = var.alb_origin_id
-      vpc_origin_config {
-        vpc_origin_id = var.alb_vpc_origin_id
+      
+      custom_origin_config {
+        origin_protocol_policy = var.api_origin_protocol_policy  # Reuse API origin settings
+        http_port              = var.api_origin_http_port
+        https_port             = var.api_origin_https_port
+        origin_ssl_protocols   = var.api_origin_ssl_protocols
       }
     }
-    
-    
   }
 
   

@@ -45,14 +45,15 @@ module "cloudfront_api" {
   distribution_type = "alb" # Using ALB as the origin
   enabled          = true
   
-  # API Origin Configuration
-  #api_origin_domain_name     = "${module.api_gateway.api_id}.execute-api.${var.aws_region}.amazonaws.com"
-  #api_origin_id             = "http-api-origin"
-  #api_origin_protocol_policy = "https-only"
-  #api_origin_ssl_protocols   = ["TLSv1.2"]
+  # ALB Origin Configuration
   alb_origin_domain_name = aws_lb.app-alb.dns_name
   alb_origin_id          = "api-alb-origin"
-  alb_vpc_origin_id = aws_cloudfront_vpc_origin.alb.id
+  
+  # Use API origin settings for ALB (since we're using custom_origin_config)
+  api_origin_protocol_policy = "http-only"
+  api_origin_http_port       = 80
+  api_origin_https_port      = 443
+  api_origin_ssl_protocols   = ["TLSv1.2"]
   # WAF Integration
   web_acl_arn = module.waf_api[0].web_acl_arn
   
