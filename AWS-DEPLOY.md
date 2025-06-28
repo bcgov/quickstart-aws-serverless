@@ -4,6 +4,7 @@
 
 1. BCGov AWS account/namespace.
 2. AWS CLI installed.
+3. Github CLI (optionally installed).
 
 ## Execute the bash script for the initial setup for each AWS environment (dev, test, prod)
 1. [Login to console via IDIR MFA](https://login.nimbus.cloud.gov.bc.ca/)

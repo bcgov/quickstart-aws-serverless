@@ -40,7 +40,8 @@ Use this repository as a starting point to quickly deploy a modern, scalable web
 ├── infrastructure/            # Terraform code for each AWS infrastructure component
 │   ├── api/                   # ECS Fargate API configuration (ALB, API Gateway, autoscaling)
 │   ├── frontend/              # CloudFront with WAF configuration
-│   └── database/              # DynamoDB table configuration
+│   ├── modules/               # Common Terraform Modules
+|   └── database/              # DynamoDB table configuration
 ├── backend/                   # NestJS backend API code
 │   ├── src/                   # Source code with controllers, services, and modules
 │   └── Dockerfile             # Container definition for backend service
@@ -76,6 +77,7 @@ Use this repository as a starting point to quickly deploy a modern, scalable web
     - AWS Secrets Manager integration for database credentials
   - **frontend/**: Sets up CloudFront distribution with WAF rules for content delivery.  
   - **database/**: Configures DynamoDB table with proper indexes and settings.
+  - **modules/**: Reusable Terraform code shared across frontend, api
 
 - **backend/**: NestJS backend application with TypeScript.
   - **src/**: Application code organized by feature modules.
@@ -168,9 +170,7 @@ npm run dev
 
 This repository uses a Terraform/Terragrunt approach for deploying to AWS, with automated workflows through GitHub Actions.
 
-## Deployment Options
-
-### Option 1: GitHub Actions CI/CD Pipeline (Recommended)
+## Deployment Using GitHub Actions CI/CD Pipeline
 
 The repository includes pre-configured GitHub Actions workflows that handle:
 - Building and testing changes on pull requests
@@ -181,30 +181,8 @@ The repository includes pre-configured GitHub Actions workflows that handle:
 
 To use the CI/CD pipeline:
 
-1. Fork or clone this repository
-2. Configure the required GitHub secrets (see below)
-3. Push changes to trigger the appropriate workflows
-
-Required GitHub secrets:
-- `AWS_ROLE_TO_ASSUME` - IAM role ARN with deployment permissions
-- `SONAR_TOKEN_BACKEND` - For SonarCloud analysis of backend code
-- `SONAR_TOKEN_FRONTEND` - For SonarCloud analysis of frontend code
-- `AWS_LICENSE_PLATE` - The license plate without env(-dev or -test) provided from OCIO when creating namespace
-
-### Option 2: Manual Terraform Deployment
-
-1. Configure your AWS credentials locally
-2. Navigate to the terraform directory
-3. Run Terragrunt commands for the desired environment
-
-```sh
-cd terraform/api/dev
-terragrunt init
-terragrunt plan
-terragrunt apply
-```
-
-For detailed deployment instructions, refer to the [AWS deployment setup guide](./AWS-DEPLOY.md).
+1. Clone this repository
+2. Follow the deployment instructions, refer to the [AWS deployment setup guide](./AWS-DEPLOY.md).
 
 # CI/CD Workflows
 

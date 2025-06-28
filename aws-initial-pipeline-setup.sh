@@ -199,18 +199,20 @@ EOF
 
     # Check if policy already exists
     if aws iam get-policy --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" --no-cli-pager &> /dev/null; then
-        print_warning "Policy $policy_name already exists. Updating policy..."
+        print_warning "Policy $policy_name already exists."
+        print_status "Deleting existing policy..."
+        aws iam delete-policy --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" --no-cli-pager
+        print_status "Recreating policy..."
         
-        # Get current policy version
-        current_version=$(aws iam get-policy --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" --query 'Policy.DefaultVersionId' --output text --no-cli-pager)
-        
-        # Create new policy version
-        aws iam create-policy-version \
-            --policy-arn "arn:aws:iam::${AWS_ACCOUNT_NUMBER}:policy/${policy_name}" \
+        # Create new policy after deletion
+        POLICY_ARN=$(aws iam create-policy \
+            --policy-name "$policy_name" \
             --policy-document file:///tmp/terraform-deploy-policy.json \
-            --set-as-default --no-cli-pager > /dev/null
+            --description "Policy for GitHub Actions to deploy infrastructure via Terraform" \
+            --query 'Policy.Arn' \
+            --output text --no-cli-pager)
         
-        print_success "Policy $policy_name updated successfully"
+        print_success "Policy recreated: $POLICY_ARN"
     else
         # Create new policy
         POLICY_ARN=$(aws iam create-policy \
@@ -264,16 +266,8 @@ EOF
     local role_arn
     # Check if role already exists
     if aws iam get-role --role-name "$role_name" --no-cli-pager &> /dev/null; then
-        print_warning "Role $role_name already exists. Updating trust policy..."
-        
-        # Update trust policy
-        aws iam update-assume-role-policy \
-            --role-name "$role_name" \
-            --policy-document file:///tmp/trust-policy.json \
-            --no-cli-pager
-        
-        print_success "Role trust policy updated"
-        role_arn="arn:aws:iam::${account_number}:role/${role_name}"
+        print_warning "Role $role_name already exists."
+        role_arn="arn:aws:iam::${AWS_ACCOUNT_NUMBER}:role/${role_name}"
     else
         # Create new role
         role_arn=$(aws iam create-role \
@@ -493,6 +487,119 @@ EOF
     echo "  - Repository is mutable (tags can be overwritten)"
 }
 
+# Function to check if GitHub CLI is installed and authenticated
+check_github_cli() {
+    if ! command -v gh &> /dev/null; then
+        print_warning "GitHub CLI (gh) is not installed."
+        print_status "You can install it from: https://cli.github.com/"
+        return 1
+    fi
+    
+    if ! gh auth status &> /dev/null; then
+        print_warning "GitHub CLI is not authenticated."
+        print_status "Please run 'gh auth login' first."
+        return 1
+    fi
+    
+    print_success "GitHub CLI is installed and authenticated"
+    return 0
+}
+
+# Function to create GitHub environment and add secrets
+create_github_environment_and_secrets() {
+    local repo_name="$1"
+    local target_env="$2"
+    local role_arn="$3"
+    local aws_license_plate="$4"
+    local aws_region="$5"
+    local ecr_repo_name="$6"
+    local aws_account_number="$7"
+    
+    print_status "Creating GitHub environment: $target_env"
+    
+    # Check if environment already exists
+    if gh api "repos/$repo_name/environments/$target_env" &> /dev/null; then
+        print_warning "Environment $target_env already exists. Will update secrets."
+    else
+        # Create environment
+        gh api "repos/$repo_name/environments/$target_env" \
+            --method PUT \
+            --field wait_timer=0 \
+            --field reviewers='[]' \
+            --field deployment_branch_policy='{"protected_branches":false,"custom_branch_policies":false}' \
+            > /dev/null
+        
+        print_success "Environment $target_env created successfully"
+    fi
+    
+    print_status "Adding secrets to environment: $target_env"
+    
+    # Add environment-specific secrets
+    gh secret set AWS_DEPLOY_ROLE_ARN \
+        --repo "$repo_name" \
+        --env "$target_env" \
+        --body "$role_arn"
+    
+    gh secret set AWS_LICENSE_PLATE \
+        --repo "$repo_name" \
+        --env "$target_env" \
+        --body "$aws_license_plate"
+    
+    
+    gh secret set AWS_ACCOUNT_NUMBER \
+        --repo "$repo_name" \
+        --env "$target_env" \
+        --body "$aws_account_number"
+    
+    
+    print_success "Secrets added to environment $target_env:"
+    echo "  - AWS_DEPLOY_ROLE_ARN"
+    echo "  - AWS_LICENSE_PLATE"
+    echo "  - AWS_ACCOUNT_NUMBER"
+}
+
+# Function to validate GitHub repository access
+validate_github_repo_access() {
+    local repo_name="$1"
+    
+    print_status "Validating access to GitHub repository: $repo_name"
+    
+    if ! gh repo view "$repo_name" &> /dev/null; then
+        print_error "Cannot access repository $repo_name"
+        print_error "Please check:"
+        print_error "  1. Repository name is correct (format: owner/repo-name)"
+        print_error "  2. You have access to the repository"
+        print_error "  3. Your GitHub token has the required permissions"
+        return 1
+    fi
+    
+    print_success "Repository access validated"
+    return 0
+}
+
+# Function to check required GitHub permissions
+check_github_permissions() {
+    local repo_name="$1"
+    
+    print_status "Checking GitHub permissions for repository operations..."
+    
+    # Try to list environments to check permissions
+    if ! gh api "repos/$repo_name/environments" &> /dev/null; then
+        print_warning "May not have sufficient permissions to manage environments and secrets"
+        print_status "Required GitHub token scopes:"
+        echo "  - repo (full repository access)"
+        echo "  - admin:repo_hook (if using webhooks)"
+        echo "  - admin:org (if repository is in an organization)"
+        
+        read -p "Do you want to continue anyway? (y/N): " CONTINUE_ANYWAY
+        if [[ ! "$CONTINUE_ANYWAY" =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    return 0
+}
+
 # Main script
 main() {
     print_status "AWS IAM Policy and Role Setup for GitHub Actions"
@@ -592,6 +699,36 @@ main() {
     create_ecr_repository "$ECR_REPO_NAME" "$AWS_REGION"
     echo
     
+    # Ask about GitHub secrets automation
+    echo
+    print_status "GitHub Environment and Secrets Setup"
+    print_status "===================================="
+    echo
+    read -p "Would you like to automatically create GitHub environment and add secrets? (y/N): " CREATE_GH_SECRETS
+    
+    if [[ "$CREATE_GH_SECRETS" =~ ^[Yy]$ ]]; then
+        if check_github_cli; then
+            if validate_github_repo_access "$REPO_NAME"; then
+                if check_github_permissions "$REPO_NAME"; then
+                    echo
+                    print_status "Creating GitHub environment and adding secrets..."
+                    create_github_environment_and_secrets "$REPO_NAME" "$TARGET_ENV" "$ROLE_ARN" "$AWS_LICENSE_PLATE" "$AWS_REGION" "$ECR_REPO_NAME" "$AWS_ACCOUNT_NUMBER"
+                    echo
+                    print_success "GitHub environment and secrets configured successfully!"
+                else
+                    print_error "Insufficient GitHub permissions. Skipping GitHub setup."
+                fi
+            else
+                print_error "Cannot access GitHub repository. Skipping GitHub setup."
+            fi
+        else
+            print_warning "GitHub CLI not available. Skipping GitHub setup."
+        fi
+    else
+        print_status "Skipping GitHub environment and secrets setup."
+    fi
+    
+    echo
     print_success "Setup completed successfully!"
     echo
     print_status "Created Resources:"
@@ -599,13 +736,42 @@ main() {
     echo "  - IAM Policy: $POLICY_NAME"
     echo "  - IAM Role: $ROLE_NAME"
     echo "  - ECR Repository: $ECR_REPO_NAME"
+    
+    # Check if GitHub setup was completed successfully
+    GITHUB_SETUP_COMPLETED=false
+    if [[ "$CREATE_GH_SECRETS" =~ ^[Yy]$ ]] && check_github_cli &> /dev/null && validate_github_repo_access "$REPO_NAME" &> /dev/null && check_github_permissions "$REPO_NAME" &> /dev/null; then
+        echo "  - GitHub Environment: $TARGET_ENV"
+        echo "  - GitHub Secrets: Configured"
+        GITHUB_SETUP_COMPLETED=true
+    fi
     echo
-    print_status "Next Steps:"
-    echo "1. Add the following secrets to your GitHub repository:"
-    echo "   - AWS_DEPLOY_ROLE_ARN: $ROLE_ARN"
-    echo "   - AWS_LICENSE_PLATE: $AWS_LICENSE_PLATE"
-    echo
-    echo "2. Set the following environment variables for Terragrunt:"
+    
+    if [[ "$GITHUB_SETUP_COMPLETED" == "false" ]]; then
+        print_status "Manual GitHub Setup Required:"
+        echo "1. Create GitHub environment '$TARGET_ENV' in your repository"
+        echo "2. Add the following secrets to your GitHub repository environment '$TARGET_ENV':"
+        echo "   - AWS_DEPLOY_ROLE_ARN: $ROLE_ARN"
+        echo "   - AWS_LICENSE_PLATE: $AWS_LICENSE_PLATE"
+        echo "   - AWS_REGION: $AWS_REGION"
+        echo "   - ECR_REPOSITORY: $ECR_REPO_NAME"
+        echo "   - AWS_ACCOUNT_NUMBER: $AWS_ACCOUNT_NUMBER"
+        echo "   - TARGET_ENV: $TARGET_ENV"
+        echo
+        echo "3. You can add these secrets via:"
+        echo "   - Repository Settings > Environments > $TARGET_ENV > Environment secrets"
+        echo "   - Or use GitHub CLI commands:"
+        echo "     gh secret set AWS_DEPLOY_ROLE_ARN --env $TARGET_ENV --body \"$ROLE_ARN\""
+        echo "     gh secret set AWS_LICENSE_PLATE --env $TARGET_ENV --body \"$AWS_LICENSE_PLATE\""
+        echo "     gh secret set AWS_ACCOUNT_NUMBER --env $TARGET_ENV --body \"$AWS_ACCOUNT_NUMBER\""
+        echo
+    else
+        print_status "GitHub Configuration Complete!"
+        echo "✓ Environment '$TARGET_ENV' created"
+        echo "✓ All required secrets added to the environment"
+        echo
+    fi
+    
+    print_status "Terragrunt Environment Variables:"
     echo "   - stack_prefix: <your-application-prefix>"
     echo "   - target_env: $TARGET_ENV"
     echo "   - aws_license_plate: $AWS_LICENSE_PLATE"
@@ -614,13 +780,9 @@ main() {
     echo "   - repo_name: $REPO_NAME"
     echo "   - ecr_repository: $ECR_REPO_NAME"
     echo
-    echo "3. Your ECR repository is ready at:"
-    echo "   - ${AWS_ACCOUNT_NUMBER}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+    print_status "ECR Repository Details:"
+    echo "   - Registry: ${AWS_ACCOUNT_NUMBER}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
     echo "   - Repository is mutable with lifecycle policies applied"
-    echo
-    echo "4. You can add these secrets via:"
-    echo "   - Repository Settings > Secrets and variables > Actions"
-    echo "   - Or use GitHub CLI: gh secret set AWS_DEPLOY_ROLE_ARN --body \"$ROLE_ARN\""
     echo
     print_status "Your Terraform remote state backend is now ready!"
     print_status "Your GitHub Actions workflows should now be able to deploy to AWS!"
