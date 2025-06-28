@@ -369,3 +369,8 @@ pyrightconfig.json
 **/dist
 # nested terragrunt-cache
 **/.terragrunt-cache/**
+**/.terraform
+# terraform plan output
+*.tfplan
+# terraform lock file
+*.terraform.lock.hcl
