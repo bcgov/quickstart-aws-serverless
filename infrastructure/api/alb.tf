@@ -1,3 +1,20 @@
+module "common" {
+  source = "../modules/common"
+  
+  target_env    = var.target_env
+  app_env       = var.app_env
+  app_name      = var.app_name
+  repo_name     = var.repo_name
+  common_tags   = var.common_tags
+}
+
+# Import networking configurations
+module "networking" {
+  source = "../modules/networking"
+  
+  target_env = var.target_env
+}
+
 resource "aws_alb" "app-alb" {
 
   name                             = var.app_name

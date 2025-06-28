@@ -1,21 +1,4 @@
 /**# Import common configurations
-module "common" {
-  source = "../modules/common"
-  
-  target_env    = var.target_env
-  app_env       = var.app_env
-  app_name      = var.app_name
-  repo_name     = var.repo_name
-  common_tags   = var.common_tags
-}
-
-# Import networking configurations
-module "networking" {
-  source = "../modules/networking"
-  
-  target_env = var.target_env
-}
-
 # API Gateway with VPC Link using the API Gateway module
 module "api_gateway" {
   source = "../modules/api-gateway"
