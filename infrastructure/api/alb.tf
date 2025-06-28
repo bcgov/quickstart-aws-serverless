@@ -15,7 +15,7 @@ module "networking" {
   target_env = var.target_env
 }
 
-resource "aws_alb" "app-alb" {
+resource "aws_lb" "app-alb" {
 
   name                             = var.app_name
   internal                         = true
@@ -29,17 +29,17 @@ resource "aws_alb" "app-alb" {
   }
   drop_invalid_header_fields = true
 }
-resource "aws_alb_listener" "internal" {
-  load_balancer_arn = aws_alb.app-alb.arn
+resource "aws_lb_listener" "internal" {
+  load_balancer_arn = aws_lb.app-alb.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_alb_target_group.app.arn
+    target_group_arn = aws_lb_target_group.app.arn
   }
 }
-resource "aws_alb_target_group" "app" {
+resource "aws_lb_target_group" "app" {
   name                 = "${var.app_name}-tg"
   port                 = var.app_port
   protocol             = "HTTP"
@@ -57,5 +57,20 @@ resource "aws_alb_target_group" "app" {
     unhealthy_threshold = "2"
   }
 
+  tags = module.common.common_tags
+}
+resource "aws_cloudfront_vpc_origin" "alb" {
+  vpc_origin_endpoint_config {
+    name                   = var.app_name
+    arn                    = aws_lb.app-alb.arn
+    http_port              = 80
+    https_port             = 443
+    origin_protocol_policy = "https-only"
+
+    origin_ssl_protocols {
+      items    = ["TLSv1.2"]
+      quantity = 1
+    }
+  }
   tags = module.common.common_tags
 }

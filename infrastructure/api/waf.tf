@@ -50,8 +50,9 @@ module "cloudfront_api" {
   #api_origin_id             = "http-api-origin"
   #api_origin_protocol_policy = "https-only"
   #api_origin_ssl_protocols   = ["TLSv1.2"]
-  alb_origin_domain_name = aws_alb.app-alb.dns_name
+  alb_origin_domain_name = aws_lb.app-alb.dns_name
   alb_origin_id          = "api-alb-origin"
+  alb_vpc_origin_id = aws_cloudfront_vpc_origin.alb.id
   # WAF Integration
   web_acl_arn = module.waf_api[0].web_acl_arn
   

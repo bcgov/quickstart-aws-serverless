@@ -102,7 +102,7 @@ resource "aws_ecs_service" "node_api_service" {
   }
 
   load_balancer {
-    target_group_arn = aws_alb_target_group.app.id
+    target_group_arn = aws_lb_target_group.app.id
     container_name   = local.container_name
     container_port   = var.app_port
   }

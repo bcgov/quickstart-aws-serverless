@@ -114,7 +114,10 @@ variable "alb_origin_id" {
   type        = string
   default     = "alb-origin"
 }
-
+variable "alb_vpc_origin_id" {
+  description = "VPC Origin ID for ALB"
+  type        = string
+}
 variable "api_origin_id" {
   description = "Origin ID for API"
   type        = string

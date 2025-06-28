@@ -52,7 +52,12 @@ resource "aws_cloudfront_distribution" "this" {
     content {
       domain_name = var.alb_origin_domain_name
       origin_id   = var.alb_origin_id
+      vpc_origin_config {
+        vpc_origin_id = var.alb_vpc_origin_id
+      }
     }
+    
+    
   }
 
   
