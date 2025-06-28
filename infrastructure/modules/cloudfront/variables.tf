@@ -15,8 +15,8 @@ variable "distribution_type" {
   default     = "s3"
   
   validation {
-    condition     = contains(["s3", "api"], var.distribution_type)
-    error_message = "Distribution type must be either 's3' or 'api'."
+    condition     = contains(["s3", "api", "alb"], var.distribution_type)
+    error_message = "Distribution type must be either 's3' or 'api' or 'alb'."
   }
 }
 
