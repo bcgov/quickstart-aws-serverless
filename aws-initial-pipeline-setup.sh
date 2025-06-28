@@ -267,7 +267,7 @@ EOF
     # Check if role already exists
     if aws iam get-role --role-name "$role_name" --no-cli-pager &> /dev/null; then
         print_warning "Role $role_name already exists."
-        role_arn="arn:aws:iam::${account_number}:role/${role_name}"
+        role_arn="arn:aws:iam::${AWS_ACCOUNT_NUMBER}:role/${role_name}"
     else
         # Create new role
         role_arn=$(aws iam create-role \
