@@ -42,7 +42,7 @@ module "cloudfront_api" {
   
   app_name          = var.app_name
   repo_name         = var.repo_name
-  distribution_type = "api"
+  distribution_type = "alb" # Using ALB as the origin
   enabled          = true
   
   # API Origin Configuration
