@@ -38,7 +38,7 @@ module "cloudfront_api_logs" {
 # CloudFront distribution for API (if public API)
 module "cloudfront_api" {
   count  = var.is_public_api ? 1 : 0
-  source = "git::https://github.com/bcgov/quickstart-aws-helpers.git//terraform/modules/s3-cloudfront?ref=v0.0.5"
+  source = "git::https://github.com/bcgov/quickstart-aws-helpers.git//terraform/modules/cloudfront?ref=v0.0.5"
 
   app_name          = var.app_name
   repo_name         = var.repo_name
