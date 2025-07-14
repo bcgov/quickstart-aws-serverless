@@ -4,7 +4,7 @@ locals {
 
 
 resource "aws_ecs_cluster" "ecs_cluster" {
-  name = "${var.app_name}"
+  name = var.app_name
   tags = module.common.common_tags
 }
 
@@ -21,7 +21,7 @@ resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
 }
 
 resource "aws_ecs_task_definition" "node_api_task" {
-  family                   = "${var.app_name}"
+  family                   = var.app_name
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.api_cpu
@@ -79,7 +79,7 @@ resource "aws_ecs_task_definition" "node_api_task" {
 
 
 resource "aws_ecs_service" "node_api_service" {
-  name                              = "${var.app_name}"
+  name                              = var.app_name
   cluster                           = aws_ecs_cluster.ecs_cluster.id
   task_definition                   = aws_ecs_task_definition.node_api_task.arn
   desired_count                     = 1

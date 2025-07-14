@@ -180,9 +180,7 @@ The repository includes pre-configured GitHub Actions workflows that handle:
 - Security scanning with Trivy
 
 To use the CI/CD pipeline:
-
-1. Clone this repository
-2. Follow the deployment instructions, refer to the [AWS deployment setup guide](./AWS-DEPLOY.md).
+- Follow the deployment instructions, refer to the [AWS deployment setup guide](https://github.com/bcgov/quickstart-aws-helpers/blob/main/AWS-DEPLOY.md).
 
 # CI/CD Workflows
 
