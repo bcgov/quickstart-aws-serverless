@@ -1,6 +1,6 @@
 # Import common configurations
 module "common" {
-  source = "../modules/common"
+  source = "git::https://github.com/bcgov/quickstart-aws-helpers.git//terraform/modules/common?ref=v0.0.5"
   
   target_env    = var.target_env
   app_env       = var.app_env
