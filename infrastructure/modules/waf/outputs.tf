@@ -2,11 +2,11 @@
 output "web_acl" {
   description = "WAF Web ACL information"
   value = {
-    id           = aws_wafv2_web_acl.this.id
-    arn          = aws_wafv2_web_acl.this.arn
-    name         = aws_wafv2_web_acl.this.name
-    description  = aws_wafv2_web_acl.this.description
-    scope        = aws_wafv2_web_acl.this.scope
+    id          = aws_wafv2_web_acl.this.id
+    arn         = aws_wafv2_web_acl.this.arn
+    name        = aws_wafv2_web_acl.this.name
+    description = aws_wafv2_web_acl.this.description
+    scope       = aws_wafv2_web_acl.this.scope
   }
 }
 

@@ -4,11 +4,11 @@ output "oai" {
   value = {
     id                              = aws_cloudfront_origin_access_identity.this.id
     arn                             = aws_cloudfront_origin_access_identity.this.arn
-    caller_reference               = aws_cloudfront_origin_access_identity.this.caller_reference
+    caller_reference                = aws_cloudfront_origin_access_identity.this.caller_reference
     cloudfront_access_identity_path = aws_cloudfront_origin_access_identity.this.cloudfront_access_identity_path
-    etag                           = aws_cloudfront_origin_access_identity.this.etag
-    iam_arn                        = aws_cloudfront_origin_access_identity.this.iam_arn
-    s3_canonical_user_id           = aws_cloudfront_origin_access_identity.this.s3_canonical_user_id
+    etag                            = aws_cloudfront_origin_access_identity.this.etag
+    iam_arn                         = aws_cloudfront_origin_access_identity.this.iam_arn
+    s3_canonical_user_id            = aws_cloudfront_origin_access_identity.this.s3_canonical_user_id
   }
 }
 

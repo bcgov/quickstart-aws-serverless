@@ -13,7 +13,7 @@ locals {
 
   # Common naming patterns
   environment = local.env_map[lower(var.target_env)]
-  
+
   # Common tags that should be applied to all resources
   common_tags = merge(
     var.common_tags,
@@ -28,7 +28,7 @@ locals {
 
   # Production environment identification for conditional resource configurations
   is_production = contains(["prod"], lower(var.target_env))
-  
+
   # Development environments for cost optimization settings
   is_development = contains(["dev", "test"], lower(var.target_env))
 }

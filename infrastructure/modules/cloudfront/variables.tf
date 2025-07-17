@@ -13,7 +13,7 @@ variable "distribution_type" {
   description = "Type of CloudFront distribution (s3 or api)"
   type        = string
   default     = "s3"
-  
+
   validation {
     condition     = contains(["s3", "api"], var.distribution_type)
     error_message = "Distribution type must be either 's3' or 'api'."
@@ -42,7 +42,7 @@ variable "price_class" {
   description = "Price class for the CloudFront distribution"
   type        = string
   default     = "PriceClass_100"
-  
+
   validation {
     condition     = contains(["PriceClass_All", "PriceClass_200", "PriceClass_100"], var.price_class)
     error_message = "Price class must be PriceClass_All, PriceClass_200, or PriceClass_100."
@@ -182,7 +182,7 @@ variable "cache_forward_cookies" {
   description = "Cookie forwarding policy (none, whitelist, all)"
   type        = string
   default     = "none"
-  
+
   validation {
     condition     = contains(["none", "whitelist", "all"], var.cache_forward_cookies)
     error_message = "Cache forward cookies must be none, whitelist, or all."
@@ -194,7 +194,7 @@ variable "geo_restriction_type" {
   description = "Type of geo restriction (none, whitelist, blacklist)"
   type        = string
   default     = "none"
-  
+
   validation {
     condition     = contains(["none", "whitelist", "blacklist"], var.geo_restriction_type)
     error_message = "Geo restriction type must be none, whitelist, or blacklist."

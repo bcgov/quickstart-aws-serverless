@@ -2,9 +2,9 @@
 output "vpc" {
   description = "VPC information"
   value = {
-    id           = data.aws_vpc.main.id
-    cidr_block   = data.aws_vpc.main.cidr_block
-    name         = local.vpc_name
+    id         = data.aws_vpc.main.id
+    cidr_block = data.aws_vpc.main.cidr_block
+    name       = local.vpc_name
   }
 }
 

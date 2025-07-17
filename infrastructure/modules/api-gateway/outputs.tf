@@ -2,10 +2,10 @@
 output "api" {
   description = "API Gateway information"
   value = {
-    id           = aws_apigatewayv2_api.this.id
-    arn          = aws_apigatewayv2_api.this.arn
-    name         = aws_apigatewayv2_api.this.name
-    endpoint     = aws_apigatewayv2_api.this.api_endpoint
+    id            = aws_apigatewayv2_api.this.id
+    arn           = aws_apigatewayv2_api.this.arn
+    name          = aws_apigatewayv2_api.this.name
+    endpoint      = aws_apigatewayv2_api.this.api_endpoint
     execution_arn = aws_apigatewayv2_api.this.execution_arn
   }
 }
@@ -32,10 +32,10 @@ output "vpc_link" {
 output "stage" {
   description = "API Gateway stage information"
   value = {
-    id           = aws_apigatewayv2_stage.this.id
-    arn          = aws_apigatewayv2_stage.this.arn
-    name         = aws_apigatewayv2_stage.this.name
-    invoke_url   = aws_apigatewayv2_stage.this.invoke_url
+    id         = aws_apigatewayv2_stage.this.id
+    arn        = aws_apigatewayv2_stage.this.arn
+    name       = aws_apigatewayv2_stage.this.name
+    invoke_url = aws_apigatewayv2_stage.this.invoke_url
   }
 }
 
