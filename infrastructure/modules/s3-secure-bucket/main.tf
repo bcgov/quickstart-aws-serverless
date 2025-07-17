@@ -32,7 +32,7 @@ resource "aws_s3_bucket_public_access_block" "this" {
 resource "aws_s3_bucket_versioning" "this" {
   count  = var.enable_versioning ? 1 : 0
   bucket = aws_s3_bucket.this.id
-  
+
   versioning_configuration {
     status = "Enabled"
   }
@@ -86,11 +86,11 @@ resource "aws_s3_bucket_policy" "this" {
       try(jsondecode(var.bucket_policy).Statement, []),
       [
         {
-          Sid = "DenyUnencryptedObjectUploads"
+          Sid       = "DenyUnencryptedObjectUploads"
           Effect    = "Deny"
           Principal = "*"
           Action    = "s3:*"
-          Resource  = [
+          Resource = [
             "arn:aws:s3:::${var.bucket_name}",
             "arn:aws:s3:::${var.bucket_name}/*"
           ]

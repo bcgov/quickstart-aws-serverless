@@ -52,7 +52,7 @@ resource "aws_cloudfront_distribution" "this" {
     allowed_methods  = var.cache_allowed_methods
     cached_methods   = var.cache_cached_methods
     target_origin_id = var.distribution_type == "s3" ? var.s3_origin_id : var.api_origin_id
-    
+
     viewer_protocol_policy = var.cache_viewer_protocol_policy
     min_ttl                = var.cache_min_ttl
     default_ttl            = var.cache_default_ttl
@@ -85,8 +85,8 @@ resource "aws_cloudfront_distribution" "this" {
   dynamic "custom_error_response" {
     for_each = var.distribution_type == "s3" ? [1] : []
     content {
-      error_code = 403
-      response_code = 200
+      error_code         = 403
+      response_code      = 200
       response_page_path = "/"
     }
   }

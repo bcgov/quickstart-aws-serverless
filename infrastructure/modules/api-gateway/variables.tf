@@ -8,7 +8,7 @@ variable "protocol_type" {
   description = "Protocol type for the API Gateway (HTTP or WEBSOCKET)"
   type        = string
   default     = "HTTP"
-  
+
   validation {
     condition     = contains(["HTTP", "WEBSOCKET"], var.protocol_type)
     error_message = "Protocol type must be HTTP or WEBSOCKET."
@@ -80,7 +80,7 @@ variable "cors_configuration" {
     allow_methods     = optional(list(string), ["*"])
     allow_origins     = optional(list(string), ["*"])
     expose_headers    = optional(list(string), [])
-    max_age          = optional(number, 0)
+    max_age           = optional(number, 0)
   })
   default = {
     allow_credentials = false
@@ -88,7 +88,7 @@ variable "cors_configuration" {
     allow_methods     = ["*"]
     allow_origins     = ["*"]
     expose_headers    = []
-    max_age          = 0
+    max_age           = 0
   }
 }
 

@@ -1,7 +1,7 @@
 variable "target_env" {
   description = "Target environment (dev, test, prod, tools, unclass)"
   type        = string
-  
+
   validation {
     condition     = contains(["dev", "test", "prod", "tools", "unclass"], var.target_env)
     error_message = "Target environment must be one of: dev, test, prod, tools, unclass."

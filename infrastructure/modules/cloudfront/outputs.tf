@@ -2,13 +2,13 @@
 output "distribution" {
   description = "CloudFront distribution information"
   value = {
-    id                    = aws_cloudfront_distribution.this.id
-    arn                   = aws_cloudfront_distribution.this.arn
-    domain_name           = aws_cloudfront_distribution.this.domain_name
-    status                = aws_cloudfront_distribution.this.status
-    hosted_zone_id        = aws_cloudfront_distribution.this.hosted_zone_id
-    etag                  = aws_cloudfront_distribution.this.etag
-    caller_reference      = aws_cloudfront_distribution.this.caller_reference
+    id               = aws_cloudfront_distribution.this.id
+    arn              = aws_cloudfront_distribution.this.arn
+    domain_name      = aws_cloudfront_distribution.this.domain_name
+    status           = aws_cloudfront_distribution.this.status
+    hosted_zone_id   = aws_cloudfront_distribution.this.hosted_zone_id
+    etag             = aws_cloudfront_distribution.this.etag
+    caller_reference = aws_cloudfront_distribution.this.caller_reference
   }
 }
 

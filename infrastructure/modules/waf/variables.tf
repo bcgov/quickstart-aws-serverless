@@ -8,7 +8,7 @@ variable "scope" {
   description = "Scope of the WAF ACL (CLOUDFRONT or REGIONAL)"
   type        = string
   default     = "CLOUDFRONT"
-  
+
   validation {
     condition     = contains(["CLOUDFRONT", "REGIONAL"], var.scope)
     error_message = "Scope must be either CLOUDFRONT or REGIONAL."
@@ -25,7 +25,7 @@ variable "default_action" {
   description = "Default action for the WAF ACL (allow or block)"
   type        = string
   default     = "allow"
-  
+
   validation {
     condition     = contains(["allow", "block"], var.default_action)
     error_message = "Default action must be either allow or block."

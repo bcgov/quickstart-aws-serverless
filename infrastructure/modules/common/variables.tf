@@ -1,7 +1,7 @@
 variable "target_env" {
   description = "AWS workload account environment (dev, test, prod)"
   type        = string
-  
+
   validation {
     condition     = contains(["dev", "test", "prod"], var.target_env)
     error_message = "Target environment must be one of: dev, test, prod, tools, unclass."
@@ -16,7 +16,7 @@ variable "app_env" {
 variable "app_name" {
   description = "The APP name with environment (app_env)"
   type        = string
-  
+
   validation {
     condition     = lower(var.app_name) == var.app_name
     error_message = "The app_name must be in lowercase."
