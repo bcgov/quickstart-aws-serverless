@@ -4,8 +4,11 @@
 module "database" {
   source = "./modules/database"
 
+  app_env             = var.app_env
+  app_name            = var.app_name
   common_tags         = var.common_tags
   dynamodb_table_name = var.dynamodb_table_name
+  repo_name           = var.repo_name
   target_env          = var.target_env
 }
 
