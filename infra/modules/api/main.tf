@@ -341,8 +341,7 @@ resource "aws_ecs_task_definition" "node_api_task" {
       {
         name  = "PORT"
         value = "3000"
-      },
-      { name = "PORT", value = "3000" }
+      }
     ]
     portMappings = [{
       protocol      = "tcp"

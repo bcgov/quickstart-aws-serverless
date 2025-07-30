@@ -42,14 +42,14 @@ generate "tfvars" {
   app_env="${local.app_env}"
   app_name="${local.stack_prefix}-node-api-${local.app_env}"
   dynamodb_table_name="${local.stack_prefix}-users-${local.app_env}"
-  repo_name = "${get_env("repo_name")}"
+  repo_name = "${local.repo_name}"
   target_env="${local.target_env}"
   common_tags = {
       "AppEnv"      = "${local.app_env}"
       "AppName"     = "${local.stack_prefix}-node-api-${local.app_env}"
       "Environment" = "${local.target_env}"
       "ManagedBy"   = "Terraform"
-      "RepoName"    = "${get_env("repo_name")}"
+      "RepoName"    = "${local.repo_name}"
     }
 EOF
 }
