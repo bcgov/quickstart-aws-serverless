@@ -3,7 +3,7 @@
 [![PR Validate](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pr-validate.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pr-validate.yml)
 [![CodeQL](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/github-code-scanning/codeql)
 [![Pause AWS Resources](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pause-resources.yml)
-[![Resume AWS Resources](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/resume-resources.yml)
+[![Resume AWS Resources](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/resume-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/resume-resources.yml)
 
 # 🚀 Quickstart for AWS using DynamoDB, ECS Fargate, and CloudFront
 
