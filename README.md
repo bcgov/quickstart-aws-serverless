@@ -1,9 +1,9 @@
-[![Merge](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/merge.yml)
-[![PR](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-open.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-open.yml)
-[![PR Validate](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-validate.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pr-validate.yml)
-[![CodeQL](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/github-code-scanning/codeql)
-[![Pause AWS Resources](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pause-resources.yml)
-[![Resume AWS Resources](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-serverless/actions/workflows/resume-resources.yml)
+[![Merge](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/merge.yml)
+[![PR](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pr-open.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pr-open.yml)
+[![PR Validate](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pr-validate.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pr-validate.yml)
+[![CodeQL](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/github-code-scanning/codeql)
+[![Pause AWS Resources](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pause-resources.yml)
+[![Resume AWS Resources](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/pause-resources.yml/badge.svg)](https://github.com/bcgov/quickstart-aws-nosql/actions/workflows/resume-resources.yml)
 # Quickstart for AWS using DynamoDB, ECS Fargate, and CloudFront
 
 This template repository provides a ready-to-deploy containerized application stack for AWS, developed by BC Government. It includes a complete application architecture with:
@@ -30,7 +30,7 @@ Use this repository as a starting point to quickly deploy a modern, scalable web
 
 # Folder Structure
 ```
-/quickstart-aws-serverless
+/quickstart-aws-nosql
 ├── .github/                   # GitHub workflows and actions for CI/CD
 │   └── workflows/             # GitHub Actions workflow definitions
 ├── terraform/                 # Terragrunt configuration files for environment management
