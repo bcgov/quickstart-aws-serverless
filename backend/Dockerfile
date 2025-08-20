@@ -1,5 +1,5 @@
 # Build
-FROM node:22.17.0-slim AS build
+FROM node:22.17.1-slim AS build
 
 # Copy, build static files; see .dockerignore for exclusions
 WORKDIR /app
@@ -7,7 +7,7 @@ COPY . ./
 RUN npm run deploy
 
 # Dependencies
-FROM node:22.17.0-slim AS dependencies
+FROM node:22.17.1-slim AS dependencies
 
 # Copy, build static files; see .dockerignore for exclusions
 WORKDIR /app
